@@ -74,7 +74,9 @@ class QuizPollRepositoryRuleTest : FirestoreEmulatorTestBase() {
         quizTitle = quiz!!.title,
         score = 1,
         totalQuestions = 1,
-        timeTakenSeconds = 12
+        timeTakenSeconds = 12,
+        userAnswers = mapOf(0 to listOf(1)),
+        submissionId = "test_submission_0000000001"
       )
       assertEquals(1, attempt.score)
       assertEquals(100.0, attempt.accuracy, 0.01)
