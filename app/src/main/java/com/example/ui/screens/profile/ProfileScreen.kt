@@ -124,7 +124,14 @@ fun ProfileScreen(
       if (it != null) {
         profile = it
       } else {
-        profile = repository.getOrCreateUserProfile()
+        profile = try {
+          repository.getOrCreateUserProfile()
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+          throw e
+        } catch (e: Exception) {
+          android.util.Log.e("ProfileScreen", "Could not load profile", e)
+          profile ?: UserProfile(userId = currentUserId)
+        }
       }
     }
   }
@@ -484,7 +491,11 @@ fun ProfileScreen(
                   modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                   onProfileUpdated = {
                     scope.launch {
-                      profile = repository.getOrCreateUserProfile()
+                      try {
+                        profile = repository.getOrCreateUserProfile()
+                      } catch (e: Exception) {
+                        android.util.Log.e("ProfileScreen", "Profile refresh failed", e)
+                      }
                     }
                   }
                 )
