@@ -29,3 +29,5 @@ functions/service-account*.json
 *.keystore
 
 node_modules/
+
+!ci-debug.keystore
