@@ -1,6 +1,5 @@
 package com.example.data.auth
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
@@ -88,7 +87,7 @@ object AuthManager {
 
     scope.launch {
       try {
-        val result = credentialManager.getCredential(context as Activity, request)
+        val result = credentialManager.getCredential(context, request)
         val credential = result.credential
         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
           val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
