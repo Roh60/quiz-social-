@@ -1,0 +1,6 @@
+{
+  "name": "QuizPoll Community",
+  "description": "Educational social network with community quiz sharing, interactive polls, discussions, and learning activities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

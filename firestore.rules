@@ -1,0 +1,224 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Counters may only move one step at a time (blocks arbitrary client-side inflation).
+    function stepsByOne(field) {
+      return request.resource.data[field] == resource.data[field] + 1
+          || request.resource.data[field] == resource.data[field] - 1;
+    }
+
+    function validNotification() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['recipientUserId','senderUserId','senderName','type','targetId','message','isRead','createdAt'])
+        && d.senderUserId == request.auth.uid
+        && d.recipientUserId is string && d.recipientUserId != request.auth.uid
+        && d.type in ['FOLLOW','LIKE','COMMENT','REPLY','QUIZ_ATTEMPT','POLL_VOTE','CHALLENGE','GROUP_INVITE']
+        && d.message is string && d.message.size() <= 200
+        && d.senderName is string && d.senderName.size() <= 80
+        && d.isRead == false;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'username', 'bio', 'profilePictureUrl', 'language',
+          'updatedAt', 'fcmToken', 'fcmTokenUpdatedAt', 'quizCount', 'pollCount', 'commentCount'
+        ]) || (
+          (!('referralCode' in resource.data.keys()) || resource.data.referralCode == '') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['referralCode']) &&
+          request.resource.data.referralCode is string && request.resource.data.referralCode.size() <= 48
+        )
+      );
+      allow delete: if false; // Account deletion is handled by the Admin SDK callable.
+
+      // Subcollection: Personal Bookmarks
+      match /bookmarks/{bookmarkId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Subcollection: User Voted Polls
+      match /votedPolls/{pollId} {
+        allow read: if isOwner(userId);
+        allow write: if false; // Updated by castPollVote callable.
+      }
+
+      // Subcollection: User Notifications
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isOwner(userId);
+        allow create: if isAuthenticated() && validNotification();
+      }
+    }
+
+    // Comments collection with sub-collections for quizzes and polls
+    match /comments/{category}/{targetId}/items/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Referral records
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && (resource.data.referrerUserId == request.auth.uid || resource.data.refereeUserId == request.auth.uid);
+      allow write: if false; // Referral rewards are validated by processReferralCode callable.
+    }
+
+    // Username reservation
+    match /usernames/{username} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Posts (quiz, poll, discussion)
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'content', 'category', 'updatedAt'])
+          && request.resource.data.likeCount == resource.data.likeCount
+          && request.resource.data.commentCount == resource.data.commentCount)
+        ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'updatedAt'])
+          && request.resource.data.likeCount == resource.data.likeCount
+          && stepsByOne('commentCount'))
+      );
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Subcollection: Likes
+      match /likes/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if false; // Like records and counters are managed by toggleLike callable.
+      }
+
+      // Subcollection: Comments
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+        allow update: if isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'replyCount'])
+            && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount']) && stepsByOne('likeCount')
+              || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount']) && stepsByOne('replyCount')))
+        );
+        allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+        // Subcollection: Replies
+        match /replies/{replyId} {
+          allow read: if isAuthenticated();
+          allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+          allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        }
+      }
+
+      // Subcollection: Bookmarks
+      match /bookmarks/{userId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Quizzes
+    match /quizzes/{quizId} {
+      allow read: if isAuthenticated() && (resource.data.isPublic == true || resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Questions are readable for public quizzes; only the quiz owner may edit them.
+      // NOTE: legacy question documents still contain correctAnswers; migrate these to answerKeys.
+      match /questions/{questionId} {
+        allow read: if isAuthenticated() && (get(/databases/$(database)/documents/quizzes/$(quizId)).data.isPublic == true || get(/databases/$(database)/documents/quizzes/$(quizId)).data.userId == request.auth.uid);
+        allow create, update, delete: if isAuthenticated()
+          && get(/databases/$(database)/documents/quizzes/$(quizId)).data.userId == request.auth.uid
+          && !request.resource.data.keys().hasAny(['correctAnswers']);
+      }
+
+      // Private answer keys are only accessed by trusted Cloud Functions (Admin SDK).
+      match /answerKeys/{questionId} {
+        allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/quizzes/$(quizId)).data.userId == request.auth.uid;
+      }
+
+      // Scores and rankings are written only by trusted Cloud Functions.
+      match /leaderboard/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // Quiz attempts
+    match /quizAttempts/{attemptId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Scores are created by submitQuizAttempt callable only.
+    }
+
+    // General Quiz Performance Competition Leaderboards (Weekly and All-Time)
+    match /competitionLeaderboards/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Ranking and points are server-authoritative.
+    }
+
+    // Polls
+    match /polls/{pollId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.options is list
+        && request.resource.data.options.size() >= 2
+        && request.resource.data.options.size() <= 6
+        && request.resource.data.optionVotes is list
+        && request.resource.data.optionVotes.size() == request.resource.data.options.size()
+        && request.resource.data.optionVotes.hasOnly([0])
+        && request.resource.data.totalVotes == 0;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid
+        && request.resource.data.optionVotes == resource.data.optionVotes
+        && request.resource.data.totalVotes == resource.data.totalVotes;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Votes
+      match /votes/{userId} {
+        allow read: if isOwner(userId) || (isAuthenticated() && get(/databases/$(database)/documents/polls/$(pollId)).data.isAnonymous != true && get(/databases/$(database)/documents/polls/$(pollId)).data.userId == request.auth.uid);
+        allow write: if false; // Votes are submitted through castPollVote callable only.
+      }
+    }
+
+    // Follows
+    match /follows/{userId}/following/{targetUid} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Follow relationships and counters are managed by callable functions.
+    }
+
+    match /follows/{userId}/followers/{followerUid} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.recipientUserId == request.auth.uid;
+      allow create: if isAuthenticated() && validNotification();
+    }
+
+    // Reports
+    match /reports/{reportId} {
+      allow create: if isAuthenticated() && request.resource.data.reporterUserId == request.auth.uid;
+      allow read, update, delete: if false; // reporter and details strictly protected from public
+    }
+
+    // Blocks
+    match /blocks/{userId}/users/{blockedUid} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

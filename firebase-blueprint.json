@@ -1,0 +1,376 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile metadata in QuizPoll Community",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "bio": { "type": "string" },
+        "language": { "type": "string" },
+        "quizCount": { "type": "number" },
+        "pollCount": { "type": "number" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "username", "displayName"]
+    },
+    "UsernameReservation": {
+      "title": "UsernameReservation",
+      "description": "Unique reservation record for a username",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "userId"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A feed post representing a quiz, poll, or discussion",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "postType": { "type": "string", "enum": ["quiz", "poll", "discussion"] },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "quizId": { "type": "string" },
+        "pollId": { "type": "string" },
+        "likeCount": { "type": "number" },
+        "commentCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "postType", "title", "category"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "A post like by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A discussion comment on a post",
+      "type": "object",
+      "properties": {
+        "commentId": { "type": "string" },
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "content": { "type": "string" },
+        "likeCount": { "type": "number" },
+        "replyCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "userId", "content"]
+    },
+    "CommentReply": {
+      "title": "CommentReply",
+      "description": "A reply to a comment",
+      "type": "object",
+      "properties": {
+        "replyId": { "type": "string" },
+        "commentId": { "type": "string" },
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["commentId", "userId", "content"]
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "description": "A bookmark saved by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "postId": { "type": "string" },
+        "postType": { "type": "string" },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "postId"]
+    },
+    "Quiz": {
+      "title": "Quiz",
+      "description": "A community educational quiz",
+      "type": "object",
+      "properties": {
+        "quizId": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "language": { "type": "string" },
+        "questionCount": { "type": "number" },
+        "timeLimitSeconds": { "type": "number" },
+        "isPublic": { "type": "boolean" },
+        "attemptCount": { "type": "number" },
+        "averageScore": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "difficulty"]
+    },
+    "QuizQuestion": {
+      "title": "QuizQuestion",
+      "description": "A question within a quiz",
+      "type": "object",
+      "properties": {
+        "questionId": { "type": "string" },
+        "quizId": { "type": "string" },
+        "questionText": { "type": "string" },
+        "questionType": { "type": "string" },
+        "explanation": { "type": "string" },
+        "orderIndex": { "type": "number" }
+      },
+      "required": ["quizId", "questionText", "questionType"]
+    },
+    "QuizAttempt": {
+      "title": "QuizAttempt",
+      "description": "A record of an attempt of a quiz by a user",
+      "type": "object",
+      "properties": {
+        "attemptId": { "type": "string" },
+        "quizId": { "type": "string" },
+        "userId": { "type": "string" },
+        "quizTitle": { "type": "string" },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "timeTakenSeconds": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["quizId", "userId", "score", "totalQuestions"]
+    },
+    "Poll": {
+      "title": "Poll",
+      "description": "A community interactive poll",
+      "type": "object",
+      "properties": {
+        "pollId": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "question": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "totalVotes": { "type": "number" },
+        "isMultipleChoice": { "type": "boolean" },
+        "allowVoteChange": { "type": "boolean" },
+        "isAnonymous": { "type": "boolean" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "question", "category"]
+    },
+    "PollVote": {
+      "title": "PollVote",
+      "description": "A user's vote on a poll",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "pollId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "pollId"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "A user following connection",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app activity notification",
+      "type": "object",
+      "properties": {
+        "notificationId": { "type": "string" },
+        "recipientUserId": { "type": "string" },
+        "senderUserId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "type": { "type": "string" },
+        "targetId": { "type": "string" },
+        "message": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recipientUserId", "senderUserId", "type", "message"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Content moderation report",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string" },
+        "reporterUserId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "targetId": { "type": "string" },
+        "reason": { "type": "string" },
+        "details": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterUserId", "targetType", "targetId", "reason"]
+    },
+    "Block": {
+      "title": "Block",
+      "description": "User blocking entry",
+      "type": "object",
+      "properties": {
+        "blockedUserId": { "type": "string" },
+        "blockedUserName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["blockedUserId"]
+    },
+    "QuizLeaderboardEntry": {
+      "title": "QuizLeaderboardEntry",
+      "description": "Ranked entry for a user on an individual quiz",
+      "type": "object",
+      "properties": {
+        "quizId": { "type": "string" },
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "timeTakenSeconds": { "type": "number" },
+        "rank": { "type": "number" },
+        "attemptCount": { "type": "number" },
+        "completedAtEpochMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["quizId", "userId", "score", "accuracy", "timeTakenSeconds"]
+    },
+    "CompetitionLeaderboardEntry": {
+      "title": "CompetitionLeaderboardEntry",
+      "description": "Aggregated user stats for general quiz competition leaderboards",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "totalScore": { "type": "number" },
+        "quizzesCompleted": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "timeTakenSeconds": { "type": "number" },
+        "weeklyScore": { "type": "number" },
+        "weeklyAccuracy": { "type": "number" },
+        "weeklyTimeTakenSeconds": { "type": "number" },
+        "weeklyQuizzesCompleted": { "type": "number" },
+        "badgeTitle": { "type": "string" },
+        "lastAttemptEpochMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "totalScore", "quizzesCompleted"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Public user profiles"
+    },
+    "/usernames/{username}": {
+      "schema": "UsernameReservation",
+      "description": "Username unique reservation documents"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Social feed posts (quiz, poll, discussion)"
+    },
+    "/posts/{postId}/likes/{userId}": {
+      "schema": "Like",
+      "description": "User likes on a post"
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on a post"
+    },
+    "/posts/{postId}/comments/{commentId}/replies/{replyId}": {
+      "schema": "CommentReply",
+      "description": "Replies to a comment"
+    },
+    "/posts/{postId}/bookmarks/{userId}": {
+      "schema": "Bookmark",
+      "description": "Post bookmarks"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Educational community quizzes"
+    },
+    "/quizzes/{quizId}/questions/{questionId}": {
+      "schema": "QuizQuestion",
+      "description": "Questions in a quiz"
+    },
+    "/quizzes/{quizId}/leaderboard/{userId}": {
+      "schema": "QuizLeaderboardEntry",
+      "description": "Individual quiz leaderboard entries"
+    },
+    "/quizAttempts/{attemptId}": {
+      "schema": "QuizAttempt",
+      "description": "Quiz completion attempts"
+    },
+    "/competitionLeaderboards/{userId}": {
+      "schema": "CompetitionLeaderboardEntry",
+      "description": "General quiz competition leaderboards (weekly and all-time)"
+    },
+    "/polls/{pollId}": {
+      "schema": "Poll",
+      "description": "Community interactive polls"
+    },
+    "/polls/{pollId}/votes/{userId}": {
+      "schema": "PollVote",
+      "description": "User votes in a poll"
+    },
+    "/follows/{userId}/following/{targetUid}": {
+      "schema": "Follow",
+      "description": "Users that userId is following"
+    },
+    "/follows/{userId}/followers/{followerUid}": {
+      "schema": "Follow",
+      "description": "Followers of userId"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User activity notifications"
+    },
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "Content moderation reports"
+    },
+    "/blocks/{userId}/users/{blockedUid}": {
+      "schema": "Block",
+      "description": "Users blocked by userId"
+    }
+  }
+}
