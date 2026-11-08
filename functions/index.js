@@ -4,7 +4,7 @@ const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestor
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 
 const app = initializeApp();
-const DATABASE_ID = "ai-studio-android-quizpoll-bedc2cc0-96aa-403c-a3e2-c286721cd11b";
+const DATABASE_ID = "(default)";
 const db = getFirestore(app, DATABASE_ID);
 const authAdmin = getAuth(app);
 const callableOptions = { region: "asia-south1", enforceAppCheck: true, maxInstances: 20 };

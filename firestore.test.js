@@ -3,7 +3,7 @@ const { test, before, after, beforeEach } = require("node:test");
 const fs = require("node:fs");
 
 const PROJECT_ID = "demo-no-project";
-const DATABASE_ID = "ai-studio-android-quizpoll-bedc2cc0-96aa-403c-a3e2-c286721cd11b";
+const DATABASE_ID = "(default)";
 
 let testEnv;
 

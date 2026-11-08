@@ -1,7 +1,7 @@
 const { initializeApp, applicationDefault } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
-const DATABASE_ID = "ai-studio-android-quizpoll-bedc2cc0-96aa-403c-a3e2-c286721cd11b";
+const DATABASE_ID = "(default)";
 initializeApp({ credential: applicationDefault() });
 const db = getFirestore(undefined, DATABASE_ID);
 

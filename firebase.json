@@ -1,7 +1,7 @@
 {
   "firestore": [
     {
-      "database": "ai-studio-android-quizpoll-bedc2cc0-96aa-403c-a3e2-c286721cd11b",
+      "database": "(default)",
       "rules": "firestore.rules",
       "indexes": "firestore.indexes.json"
     }

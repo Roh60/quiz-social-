@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
-    <string name="firestore_database_id" translatable="false">ai-studio-android-quizpoll-bedc2cc0-96aa-403c-a3e2-c286721cd11b</string>
+    <string name="firestore_database_id" translatable="false">(default)</string>
 </resources>
