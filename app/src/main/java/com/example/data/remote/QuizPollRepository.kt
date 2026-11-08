@@ -18,6 +18,7 @@ import com.example.data.model.Post
 import com.example.data.model.Quiz
 import com.example.data.model.QuizAttempt
 import com.example.data.model.QuizQuestion
+import com.example.data.model.ReferralRecord
 import com.example.data.model.ReportItem
 import com.example.data.model.TrendingMetric
 import com.example.data.model.UserProfile
