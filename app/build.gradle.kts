@@ -1,5 +1,6 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 import java.time.Duration
+import java.io.File
 
 plugins {
   alias(libs.plugins.android.application)
@@ -83,7 +84,7 @@ android {
     unitTests {
       isIncludeAndroidResources = true
       all {
-        if (java.io.File("/home/appuser/.m2/repository").exists()) it.systemProperty(
+        if (File("/home/appuser/.m2/repository").exists()) it.systemProperty(
           "robolectric.dependency.dir",
           "/home/appuser/.m2/repository/org/robolectric/android-all-instrumented/16-robolectric-13921718-i7"
         )
