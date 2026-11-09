@@ -1,9 +1,18 @@
 package com.example.ads
 
 import android.app.Activity
+import android.content.Context
 import android.util.Log
 
+/**
+ * Unified AdsManager facade orchestrating all monetization and advertising subsystems:
+ * - AdMob & Mediation initialization
+ * - Consent and privacy management (UMP)
+ * - Frequency capping and natural transitions
+ * - Banner, Native, Interstitial, and Rewarded lifecycle
+ */
 object AdsManager {
+
   val frequencyController = AdFrequencyController()
   val mediationManager = MediationManager()
   val bannerAdManager = BannerAdManager()
@@ -11,50 +20,45 @@ object AdsManager {
   val interstitialAdManager = InterstitialAdManager(frequencyController)
   val rewardedAdManager = RewardedAdManager()
   val adMobManager = AdMobManager()
-  @Volatile private var isInitialized = false
 
-  fun initialize(activity: Activity) {
+  private var isInitialized = false
+
+  fun initialize(context: Context) {
     if (isInitialized) return
-    ConsentManager.initialize(activity) { canRequest ->
-      if (!canRequest || !AdConfiguration.isAdsEnabled) {
-        Log.i("AdsManager", "Ads not requested: consent unavailable or ads disabled")
-        isInitialized = true
-        return@initialize
-      }
-      adMobManager.initialize(activity) {
-        mediationManager.initialize()
-        isInitialized = true
-        preloadAds(activity)
-        Log.i("AdsManager", "Initialized. Present adapters: ${mediationManager.getActivePartners()}")
-      }
-    }
-  }
 
-  fun showPrivacyOptions(activity: Activity) {
-    ConsentManager.showPrivacyOptions(activity) {
-      if (ConsentManager.canRequestAds()) {
-        isInitialized = false
-        initialize(activity)
+    ConsentManager.initialize(context) {
+      adMobManager.initialize(context) {
+        mediationManager.initialize(context)
+        isInitialized = true
+        Log.i("AdsManager", "AdsManager initialized with ${mediationManager.getActivePartners().size} active mediation partners.")
       }
     }
   }
 
   fun onQuizCompleted(activity: Activity? = null, onDismissed: () -> Unit = {}) {
-    val eligible = frequencyController.onQuizCompleted()
-    if (eligible && activity != null) interstitialAdManager.showInterstitialIfAllowed(activity, onDismissed)
-    else onDismissed()
+    val shouldShow = frequencyController.onQuizCompleted()
+    if (shouldShow && activity != null) {
+      interstitialAdManager.showInterstitialIfAllowed(activity, onDismissed)
+    } else {
+      onDismissed()
+    }
   }
 
   fun preloadAds(activity: Activity) {
-    if (!isInitialized || !ConsentManager.canRequestAds()) return
+    if (!isInitialized) initialize(activity)
     interstitialAdManager.loadInterstitial(activity)
     rewardedAdManager.loadRewardedAd(activity)
   }
 
-  fun showRewardedAd(activity: Activity?, onUserEarnedReward: (String, Int) -> Unit,
-                     onAdFailed: (String) -> Unit = {}) {
-    if (activity == null) { onAdFailed("Activity not available."); return }
-    if (!isInitialized || !ConsentManager.canRequestAds()) { onAdFailed("Ad consent is not ready."); return }
-    rewardedAdManager.showRewardedAd(activity, onUserEarnedReward, onAdFailed = onAdFailed)
+  fun showRewardedAd(
+    activity: Activity?,
+    onUserEarnedReward: (rewardType: String, amount: Int) -> Unit,
+    onAdFailed: (String) -> Unit = {}
+  ) {
+    if (activity != null) {
+      rewardedAdManager.showRewardedAd(activity, onUserEarnedReward, onAdFailed = onAdFailed)
+    } else {
+      onAdFailed("Activity not available.")
+    }
   }
 }

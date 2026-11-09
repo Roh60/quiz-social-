@@ -10,14 +10,6 @@ plugins {
   alias(libs.plugins.google.services)
 }
 
-val adsTestMode = providers.gradleProperty("ADS_TEST_MODE").orElse("true").get()
-val admobAppId = providers.gradleProperty("ADMOB_APP_ID").orElse("").get()
-val admobBannerId = providers.gradleProperty("ADMOB_BANNER_AD_UNIT_ID").orElse("").get()
-val admobInterstitialId = providers.gradleProperty("ADMOB_INTERSTITIAL_AD_UNIT_ID").orElse("").get()
-val admobRewardedId = providers.gradleProperty("ADMOB_REWARDED_AD_UNIT_ID").orElse("").get()
-val admobNativeId = providers.gradleProperty("ADMOB_NATIVE_AD_UNIT_ID").orElse("").get()
-fun asBuildConfigString(value: String) = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
-
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -30,12 +22,6 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    manifestPlaceholders["ADMOB_APP_ID"] = admobAppId.ifBlank { "ca-app-pub-3940256099942544~3347511713" }
-    buildConfigField("boolean", "ADS_TEST_MODE", adsTestMode)
-    buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", asBuildConfigString(admobBannerId))
-    buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", asBuildConfigString(admobInterstitialId))
-    buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", asBuildConfigString(admobRewardedId))
-    buildConfigField("String", "ADMOB_NATIVE_AD_UNIT_ID", asBuildConfigString(admobNativeId))
   }
 
   // Do not remove or modify these signingConfigs. They are necessary for building, installing,
@@ -45,7 +31,7 @@ android {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
       storeFile = file(keystorePath)
       storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+      keyAlias = "upload"
       keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
@@ -59,8 +45,7 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = true
-      isShrinkResources = true
+      isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.
@@ -138,16 +123,11 @@ dependencies {
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.auth)
   implementation(libs.firebase.messaging)
-  implementation(libs.google.mobile.ads)
-  implementation(libs.inmobi.mediation)
-  implementation(libs.google.ump)
-  implementation(libs.firebase.functions)
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services)
   implementation(libs.googleid)
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.firebase.appcheck.debug)
-  implementation(libs.firebase.appcheck.playintegrity)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)

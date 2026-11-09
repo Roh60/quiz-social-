@@ -84,9 +84,7 @@ interface FirestoreDataRepository {
     quizTitle: String,
     score: Int,
     totalQuestions: Int,
-    timeTakenSeconds: Int,
-    userAnswers: Map<Int, List<Int>>,
-    submissionId: String
+    timeTakenSeconds: Int
   ): QuizAttempt
 
   /**

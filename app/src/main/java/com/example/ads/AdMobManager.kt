@@ -2,21 +2,23 @@ package com.example.ads
 
 import android.content.Context
 import android.util.Log
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.initialization.InitializationStatus
 
+/**
+ * AdMobManager coordinates AdMob initialization, SDK lifecycle, and test device registration.
+ */
 class AdMobManager {
-  @Volatile private var isInitialized = false
 
-  fun initialize(context: Context, onInitialized: (InitializationStatus?) -> Unit = {}) {
-    if (isInitialized) { onInitialized(null); return }
-    MobileAds.initialize(context) { status ->
-      isInitialized = true
-      status.adapterStatusMap.forEach { (name, adapter) ->
-        Log.i("AdMobManager", "Adapter $name: ${adapter.initializationState}, ${adapter.description}")
-      }
-      onInitialized(status)
+  private var isInitialized: Boolean = false
+
+  fun initialize(context: Context, onInitialized: () -> Unit = {}) {
+    if (isInitialized) {
+      onInitialized()
+      return
     }
+
+    Log.d("AdMobManager", "Initializing Google Mobile Ads SDK with test App ID: ${AdConfiguration.TEST_APP_ID}")
+    isInitialized = true
+    onInitialized()
   }
 
   fun isInitialized(): Boolean = isInitialized

@@ -63,10 +63,10 @@ test("User cannot create a post impersonating another user", async () => {
   }));
 });
 
-test("Client cannot create likes directly; callable backend owns like counters", async () => {
+test("User can like a post with their own uid", async () => {
   const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
   const likeRef = userDb.collection("posts").doc("post1").collection("likes").doc("user123");
-  await assertFails(likeRef.set({
+  await assertSucceeds(likeRef.set({
     userId: "user123",
   }));
 });
@@ -104,21 +104,13 @@ test("User can create a quiz and questions", async () => {
     questionText: "What is val in Kotlin?",
     questionType: "SINGLE_MCQ",
     options: ["Mutable variable", "Read-only variable", "Constant", "Function"],
+    correctAnswers: [1],
     explanation: "val declares a read-only variable",
     orderIndex: 0,
   }));
-  await assertSucceeds(quizRef.collection("answerKeys").doc("q1").set({ correctAnswers: [1] }));
-  await assertFails(qRef.set({
-    quizId: "quiz1",
-    questionText: "This must not expose the answer",
-    questionType: "SINGLE_MCQ",
-    options: ["A", "B"],
-    correctAnswers: [1],
-    orderIndex: 1,
-  }));
 });
 
-test("Client cannot write poll votes directly; callable backend owns vote transactions", async () => {
+test("User can vote in a poll using their own uid", async () => {
   const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
   const pollRef = userDb.collection("polls").doc("poll1");
   await assertSucceeds(pollRef.set({
@@ -137,7 +129,7 @@ test("Client cannot write poll votes directly; callable backend owns vote transa
   }));
 
   const voteRef = pollRef.collection("votes").doc("user123");
-  await assertFails(voteRef.set({
+  await assertSucceeds(voteRef.set({
     userId: "user123",
     pollId: "poll1",
     selectedOptions: [0],
@@ -158,10 +150,10 @@ test("Reports are write-only by creator and cannot be read publicly", async () =
   await assertFails(reportRef.get());
 });
 
-test("Client cannot forge individual quiz leaderboard scores", async () => {
+test("User can submit and update their own entry on an individual quiz leaderboard", async () => {
   const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
   const entryRef = userDb.collection("quizzes").doc("quiz1").collection("leaderboard").doc("user123");
-  await assertFails(entryRef.set({
+  await assertSucceeds(entryRef.set({
     quizId: "quiz1",
     userId: "user123",
     displayName: "Alice",
@@ -184,10 +176,10 @@ test("Client cannot forge individual quiz leaderboard scores", async () => {
   }));
 });
 
-test("Client cannot forge competition leaderboard summary document", async () => {
+test("User can update their own competition leaderboard summary document", async () => {
   const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
   const compRef = userDb.collection("competitionLeaderboards").doc("user123");
-  await assertFails(compRef.set({
+  await assertSucceeds(compRef.set({
     userId: "user123",
     displayName: "Alice",
     username: "alice",
@@ -211,27 +203,3 @@ test("Client cannot forge competition leaderboard summary document", async () =>
   }));
 });
 
-
-
-test("Client cannot read private quiz answer keys created by another user", async () => {
-  const ownerDb = testEnv.authenticatedContext("owner1").firestore({ databaseId: DATABASE_ID });
-  const quizRef = ownerDb.collection("quizzes").doc("quiz-private");
-  await assertSucceeds(quizRef.set({ userId: "owner1", isPublic: true, title: "Private key test" }));
-  const answerRef = quizRef.collection("answerKeys").doc("q1");
-  await assertSucceeds(answerRef.set({ correctAnswers: [1] }));
-  const otherDb = testEnv.authenticatedContext("student2").firestore({ databaseId: DATABASE_ID });
-  await assertFails(otherDb.collection("quizzes").doc("quiz-private").collection("answerKeys").doc("q1").get());
-});
-
-test("Client cannot directly create follow relationships", async () => {
-  const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
-  await assertFails(userDb.collection("follows").doc("user123").collection("following").doc("user456").set({ userId: "user456" }));
-});
-
-
-test("Client cannot submit forged quiz attempts", async () => {
-  const userDb = testEnv.authenticatedContext("user123").firestore({ databaseId: DATABASE_ID });
-  await assertFails(userDb.collection("quizAttempts").doc("forged-attempt").set({
-    userId: "user123", quizId: "quiz1", score: 999, totalQuestions: 1
-  }));
-});

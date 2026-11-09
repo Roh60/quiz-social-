@@ -1,21 +1,21 @@
-# Keep line numbers for readable crash reports
--keepattributes SourceFile,LineNumberTable,Signature,*Annotation*,InnerClasses,EnclosingMethod
--renamesourcefileattribute SourceFile
+# Add project specific ProGuard rules here.
+# You can control the set of applied configuration files using the
+# proguardFiles setting in build.gradle.
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Firestore maps documents to these classes via reflection
--keep class com.example.data.model.** { *; }
--keepclassmembers class com.example.data.model.** { *; }
+# If your project uses WebView with JS, uncomment the following
+# and specify the fully qualified class name to the JavaScript interface
+# class:
+#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+#}
 
-# Room entities / DAOs
--keep class com.example.data.local.** { *; }
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
 
-# Firebase / Play services / Ads / InMobi
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.ads.** { *; }
--keep class com.inmobi.** { *; }
--dontwarn com.inmobi.**
--dontwarn com.google.android.gms.**
-
-# Kotlin coroutines / metadata
--keep class kotlin.Metadata { *; }
--dontwarn kotlinx.coroutines.**
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile

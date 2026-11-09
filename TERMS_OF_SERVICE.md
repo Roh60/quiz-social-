@@ -37,12 +37,12 @@ By downloading, accessing, or using QuizPoll Community ("the App"), you agree to
 ---
 
 ## 5. In-App Advertisements
-QuizPoll Community is supported by third-party advertising partners including Google AdMob and InMobi through AdMob Mediation. Advertisements are served in accordance with Google Play Developer Program policies and Google AdMob behavioral policies.
+QuizPoll Community is supported by third-party advertising partners including Google AdMob, AppLovin, Unity, InMobi, Meta, Mintegral, and Pangle. Advertisements are served in accordance with Google Play Developer Program policies and Google AdMob behavioral policies.
 
 ---
 
 ## 6. Account Deletion & Termination
-You may terminate your account at any time using the in-app "Delete Account & Purge Data" button in Settings, or via web request at `the public account deletion page (URL pending Firebase Hosting deployment)`. Deletion is permanent and irreversible.
+You may terminate your account at any time using the in-app "Delete Account & Purge Data" button in Settings, or via web request at `https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/delete-account`. Deletion is permanent and irreversible.
 
 ---
 

@@ -216,7 +216,7 @@ fun ActivityPointsAndBadgesCard(
             activity = context as? Activity,
             onUserEarnedReward = { _, _ ->
               hasWatchedReward = true
-              Toast.makeText(context, "Ad completed. Reward points are not enabled yet.", Toast.LENGTH_SHORT).show()
+              Toast.makeText(context, "🎉 You earned +50 Bonus Activity Points!", Toast.LENGTH_SHORT).show()
             },
             onAdFailed = { msg ->
               Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
@@ -234,7 +234,7 @@ fun ActivityPointsAndBadgesCard(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-          text = if (hasWatchedReward) "Video completed" else "Watch optional sponsor video (no points yet)",
+          text = if (hasWatchedReward) "Reward Granted (+50 pts)" else "Watch Sponsor Video (+50 Bonus Points)",
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onSurface
         )

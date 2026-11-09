@@ -44,7 +44,7 @@ jobs:
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
 
       - name: Build Release App Bundle
-        run: ./gradlew bundleRelease --no-daemon
+        run: bash ./gradlew bundleRelease --no-daemon
 
       - name: Upload Release AAB
         uses: actions/upload-artifact@v4

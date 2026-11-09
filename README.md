@@ -20,18 +20,3 @@ View your app in AI Studio: https://ai.studio/apps/bedc2cc0-96aa-403c-a3e2-c2867
 5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
 6. Run the app on an emulator or physical device
 7. If you have already published your app in AI Studio, please [request upload key reset](https://support.google.com/googleplay/android-developer/answer/9842756#zippy=%2Crequest-an-upload-key-reset) in Google Play Console.
-
-
-## Advertising (AdMob + InMobi)
-
-The Android source now uses Google Mobile Ads SDK + the InMobi mediation adapter and UMP consent flow. It remains in test mode. Complete the account-side mapping steps in `ADS_SETUP_ADMOB_INMOBI.md` before production. Native feed ads and persistent rewarded points are intentionally disabled until their real renderer and server verification are implemented.
-
-
-## Firebase project verification
-
-Read `FIREBASE_PROJECT_SETUP_REQUIRED.md` for the matching QuizPoll client and required Firebase Console checks. Run `node scripts/check-firebase-config.js` before building.
-
-
-## Backend deployment
-
-See `BACKEND_DEPLOYMENT.md` for Cloud Functions, Firestore Rules, App Check and the one-time legacy quiz answer-key migration. The backend functions are source code only until deployed to the correct Firebase project.

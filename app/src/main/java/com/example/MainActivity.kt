@@ -44,7 +44,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     QuizPollMessagingService.ensureNotificationChannel(this)
-    com.example.ads.AdsManager.initialize(this)
+    com.example.ads.AdsManager.initialize(applicationContext)
+    com.example.ads.AdsManager.preloadAds(this)
 
     setContent {
       val context = LocalContext.current

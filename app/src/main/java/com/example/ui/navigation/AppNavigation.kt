@@ -44,6 +44,7 @@ import com.example.ui.screens.profile.DraftsScreen
 import com.example.ui.screens.profile.FollowersScreen
 import com.example.ui.screens.profile.FollowingScreen
 import com.example.ui.screens.profile.ProfileScreen
+import com.example.ui.screens.quiz.QuizFeedScreen
 import com.example.ui.screens.quiz.QuizPlayerScreen
 import com.example.ui.screens.quiz.QuizResultScreen
 import com.example.ui.screens.search.SearchScreen
@@ -81,6 +82,7 @@ sealed class SubScreen {
   data class Following(val userId: String) : SubScreen()
   object Bookmarks : SubScreen()
   object Settings : SubScreen()
+  object QuizFeed : SubScreen()
 }
 
 @Composable
@@ -226,6 +228,13 @@ fun AppNavigation(
             quizPollRepo = repository,
             onNavigateBack = { currentSubScreen = null },
             onSignedOut = onSignedOut
+          )
+        }
+        is SubScreen.QuizFeed -> {
+          QuizFeedScreen(
+            repository = repository,
+            onNavigateBack = { currentSubScreen = null },
+            onTakeQuiz = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) }
           )
         }
       }

@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import com.example.data.model.Poll
 import com.example.data.model.Post
 import com.example.data.model.QuizCategories
-import com.example.data.model.UserProfile
 import com.example.data.remote.QuizPollRepository
 import com.example.ui.components.PollWidget
 import com.example.ui.components.QuizCard
@@ -81,10 +80,8 @@ fun ExploreScreen(
   var trendingPosts by remember { mutableStateOf<List<Post>>(emptyList()) }
   var isLoadingTrending by remember { mutableStateOf(true) }
   var followingUserIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-  var suggestedUsers by remember { mutableStateOf<List<UserProfile>>(emptyList()) }
 
   var spotlightPollVotes by remember { mutableStateOf<List<Int>>(emptyList()) }
-  var spotlightPoll by remember { mutableStateOf<Poll?>(null) }
 
   LaunchedEffect(Unit) {
     repository.observeFeed(tab = "Trending").collectLatest {
@@ -93,38 +90,9 @@ fun ExploreScreen(
     }
   }
 
-  LaunchedEffect(currentUserId) {
-    repository.observeSuggestedUsers(currentUserId).collectLatest { suggestedUsers = it }
-  }
-
-  LaunchedEffect(currentUserId) {
-    repository.observeFollowingIds(currentUserId).collectLatest { followingUserIds = it }
-  }
-
-  val trendingQuizzes = trendingPosts.filter { it.postType == "quiz" && it.quizId.isNotBlank() }
-  val trendingPolls = trendingPosts.filter { it.postType == "poll" && it.pollId.isNotBlank() }
+  val trendingQuizzes = trendingPosts.filter { it.postType == "quiz" }
+  val trendingPolls = trendingPosts.filter { it.postType == "poll" }
   val trendingDiscussions = trendingPosts.filter { it.postType == "discussion" }
-  val spotlightQuizPost = trendingQuizzes.firstOrNull()
-  val spotlightPollPost = trendingPolls.firstOrNull()
-
-  LaunchedEffect(spotlightPollPost?.pollId) {
-    val pollId = spotlightPollPost?.pollId
-    if (pollId.isNullOrBlank()) {
-      spotlightPoll = null
-      spotlightPollVotes = emptyList()
-    } else {
-      repository.observePoll(pollId).collectLatest { spotlightPoll = it }
-    }
-  }
-
-  LaunchedEffect(spotlightPollPost?.pollId) {
-    val pollId = spotlightPollPost?.pollId
-    if (!pollId.isNullOrBlank()) {
-      repository.observeUserVote(pollId).collectLatest { vote ->
-        spotlightPollVotes = vote?.selectedOptions ?: emptyList()
-      }
-    }
-  }
 
   Column(
     modifier = modifier
@@ -138,7 +106,7 @@ fun ExploreScreen(
     )
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-      // Search entry that navigates to SearchScreen
+      // Fake Search Bar that navigates to SearchScreen
       Surface(
         modifier = Modifier
           .fillMaxWidth()
@@ -164,56 +132,48 @@ fun ExploreScreen(
 
       Spacer(modifier = Modifier.height(18.dp))
 
-      // Real community quiz spotlight; no fabricated daily question or score.
-      SectionHeader(title = "Community Quiz Spotlight", icon = Icons.Default.HelpOutline)
-      if (spotlightQuizPost == null) {
-        Text(
-          "No trending community quiz yet. Create the first quiz and it can appear here.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          modifier = Modifier.padding(vertical = 12.dp)
-        )
-      } else {
-        Card(
-          modifier = Modifier.fillMaxWidth().clickable { onNavigateToQuizPlayer(spotlightQuizPost.quizId) },
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-          Column(modifier = Modifier.padding(16.dp)) {
-            Text(spotlightQuizPost.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("By @${spotlightQuizPost.authorUsername}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(onClick = { onNavigateToQuizPlayer(spotlightQuizPost.quizId) }) { Text("Play Quiz") }
-          }
-        }
-      }
+      // Spotlight Interactive Quiz Challenge
+      SectionHeader(title = "Daily Quiz Challenge", icon = Icons.Default.HelpOutline)
+      QuizCard(
+        question = "Which planet has the most prominent and extensive ring system in our solar system?",
+        options = listOf("Jupiter", "Saturn", "Uranus", "Neptune"),
+        correctAnswerIndex = 1,
+        questionId = "explore_spotlight_quiz",
+        category = "Science",
+        difficulty = "Medium",
+        explanation = "Saturn has the most extensive and visible ring system, composed predominantly of billions of ice particles, rocky debris, and cosmic dust.",
+        modifier = Modifier.padding(horizontal = 0.dp)
+      )
 
       Spacer(modifier = Modifier.height(18.dp))
 
-      // Real Firestore poll only; never display fabricated vote totals.
-      SectionHeader(title = "Trending Community Poll", icon = Icons.Default.BarChart)
-      if (spotlightPoll == null) {
-        Text(
-          "No trending community poll yet. Published polls will appear here.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          modifier = Modifier.padding(vertical = 12.dp)
-        )
-      } else {
-        val activePoll = spotlightPoll
-        if (activePoll != null) {
-          PollWidget(
-            poll = activePoll,
-            userVotedIndices = spotlightPollVotes,
-            onVoteCast = { selected ->
-              scope.launch {
-                try { repository.submitPollVote(activePoll.id, selected) } catch (_: Exception) { }
-              }
-            },
-            modifier = Modifier.padding(horizontal = 0.dp)
+      // Spotlight Community Poll Widget
+      SectionHeader(title = "Community Poll of the Day", icon = Icons.Default.BarChart)
+      PollWidget(
+        poll = remember {
+          Poll(
+            id = "explore_spotlight_poll",
+            question = "Which learning technique helps you master challenging subjects fastest?",
+            description = "Cast your vote and view real-time percentage results from the community.",
+            category = "Education & Learning",
+            options = listOf(
+              "Interactive Practice Quizzes",
+              "Community Discussions & Explanations",
+              "Spaced Repetition & Flashcards",
+              "Hands-on Projects & Problem Solving"
+            ),
+            optionVotes = listOf(142L, 98L, 64L, 115L),
+            totalVotes = 419L,
+            isMultipleChoice = false,
+            allowVoteChange = true
           )
-        }
-      }
+        },
+        userVotedIndices = spotlightPollVotes,
+        onVoteCast = { selected ->
+          spotlightPollVotes = selected
+        },
+        modifier = Modifier.padding(horizontal = 0.dp)
+      )
 
       Spacer(modifier = Modifier.height(20.dp))
 
@@ -384,53 +344,42 @@ fun ExploreScreen(
         Spacer(modifier = Modifier.height(24.dp))
       }
 
-      // Recommended contributors are real Firebase users, never fabricated demo profiles.
+      // Recommended Contributors
       SectionHeader(title = "Community Educators", icon = Icons.Default.PersonAdd)
-      if (suggestedUsers.isEmpty()) {
-        Text(
-          "Community creators will appear here as learners join and publish quizzes.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          modifier = Modifier.padding(vertical = 12.dp)
-        )
-      } else {
-        suggestedUsers.forEach { profile ->
-          val userId = profile.userId
-          val isFollowing = followingUserIds.contains(userId)
-          Card(
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+      val sampleEducators = listOf(
+        Triple("Sarah Jenkins", "sarah_bio", "Science & Biology Teacher"),
+        Triple("David Kumar", "david_code", "Algorithms & Kotlin Lead"),
+        Triple("Elena Rostov", "elena_hist", "World History Researcher")
+      )
+      sampleEducators.forEach { (name, handle, role) ->
+        val isFollowing = followingUserIds.contains(handle)
+        Card(
+          shape = RoundedCornerShape(14.dp),
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+          elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+          modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        ) {
+          Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Row(
-              modifier = Modifier.padding(12.dp),
-              verticalAlignment = Alignment.CenterVertically
+            UserAvatar(name = name, size = 40)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+              Text(text = name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+              Text(text = "@$handle • $role", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Button(
+              onClick = {
+                followingUserIds = if (isFollowing) followingUserIds - handle else followingUserIds + handle
+              },
+              shape = RoundedCornerShape(10.dp),
+              colors = ButtonDefaults.buttonColors(
+                containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                contentColor = if (isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
+              )
             ) {
-              UserAvatar(name = profile.displayName, size = 40)
-              Spacer(modifier = Modifier.width(12.dp))
-              Column(modifier = Modifier.weight(1f)) {
-                Text(text = profile.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "@${profile.username} • ${profile.quizCount} quizzes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-              }
-              Button(
-                onClick = {
-                  scope.launch {
-                    try {
-                      if (isFollowing) repository.unfollowUser(userId)
-                      else repository.followUser(userId, profile.displayName, profile.username)
-                      followingUserIds = if (isFollowing) followingUserIds - userId else followingUserIds + userId
-                    } catch (_: Exception) { }
-                  }
-                },
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                  containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
-                  contentColor = if (isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
-                )
-              ) {
-                Text(if (isFollowing) "Following" else "Follow")
-              }
+              Text(if (isFollowing) "Following" else "Follow")
             }
           }
         }

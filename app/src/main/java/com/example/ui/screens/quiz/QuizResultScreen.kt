@@ -40,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +57,6 @@ import com.example.data.remote.QuizPollRepository
 import com.example.ui.components.BannerAdView
 import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,9 +74,6 @@ fun QuizResultScreen(
   var quiz by remember { mutableStateOf<Quiz?>(null) }
   var questions by remember { mutableStateOf<List<QuizQuestion>>(emptyList()) }
   var isSavedToCloud by remember { mutableStateOf(false) }
-  var displayedScore by remember(quizId) { mutableStateOf(score) }
-  var saveError by remember { mutableStateOf<String?>(null) }
-  val submissionId = rememberSaveable(quizId) { UUID.randomUUID().toString() }
 
   val context = LocalContext.current
 
@@ -88,32 +83,19 @@ fun QuizResultScreen(
       quiz = repository.getQuiz(quizId)
       questions = repository.getQuizQuestions(quizId)
       if (!isSavedToCloud) {
-        val attempt = repository.submitQuizAttempt(
+        repository.submitQuizAttempt(
           quizId = quizId,
           quizTitle = quiz?.title ?: "Community Quiz",
           score = score,
           totalQuestions = totalQuestions,
-          timeTakenSeconds = timeTakenSeconds,
-          userAnswers = userAnswers,
-          submissionId = submissionId
+          timeTakenSeconds = timeTakenSeconds
         )
-        displayedScore = attempt.score
         isSavedToCloud = true
-        try {
-          val answerReview = repository.getQuizAnswerReview(quizId, attempt.id)
-          questions = questions.mapIndexed { index, question ->
-            question.copy(correctAnswers = answerReview[index] ?: emptyList())
-          }
-        } catch (_: Exception) {
-          saveError = "Score saved; answer review is temporarily unavailable."
-        }
       }
-    } catch (e: Exception) {
-      saveError = e.localizedMessage ?: "Could not sync quiz result."
-    }
+    } catch (_: Exception) {}
   }
 
-  val accuracy = if (totalQuestions > 0) (displayedScore.toDouble() / totalQuestions * 100.0) else 0.0
+  val accuracy = if (totalQuestions > 0) (score.toDouble() / totalQuestions * 100.0) else 0.0
 
   Scaffold(
     topBar = {
@@ -139,7 +121,7 @@ fun QuizResultScreen(
         Box(contentAlignment = Alignment.Center) {
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-              text = "$displayedScore / $totalQuestions",
+              text = "$score / $totalQuestions",
               style = MaterialTheme.typography.displayMedium,
               fontWeight = FontWeight.ExtraBold,
               color = MaterialTheme.colorScheme.primary
@@ -172,12 +154,6 @@ fun QuizResultScreen(
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
       )
-
-      if (isSavedToCloud) {
-        Text("Result verified and saved", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-      } else if (saveError != null) {
-        Text("Result not synced: $saveError", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-      }
 
       Spacer(modifier = Modifier.height(24.dp))
 

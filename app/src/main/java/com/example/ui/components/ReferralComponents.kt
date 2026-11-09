@@ -175,7 +175,7 @@ fun ReferralCard(
                   putExtra(Intent.EXTRA_SUBJECT, "Join me on QuizPoll Community!")
                   putExtra(
                     Intent.EXTRA_TEXT,
-                    "Join QuizPoll Community with my referral code $myCode. Search for QuizPoll Community on Google Play."
+                    "Join QuizPoll Community with my referral code $myCode to claim +50 Bonus Welcome Points! Download the app: https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app"
                   )
                 }
                 context.startActivity(Intent.createChooser(shareIntent, "Share Referral Code"))

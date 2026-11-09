@@ -49,14 +49,18 @@ class ExampleRobolectricTest {
 
   @Test
   fun `verify share sheet intent construction`() {
+    val postId = "sample_quiz_123"
     val postTitle = "Ancient World Wonders"
     val postCategory = "History"
+    val deepLinkUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/$postId"
+
     val shareSubject = "Quiz: $postTitle"
     val shareBody = buildString {
       append("Check out this Quiz on QuizPoll Community!\n\n")
       append("\"$postTitle\"")
       append("\n\nTopic: $postCategory")
-      append("\n\nSearch for QuizPoll Community in the app to find this quiz.")
+      append("\n\nOpen link to view, vote, or play:\n")
+      append(deepLinkUrl)
     }
 
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -74,8 +78,7 @@ class ExampleRobolectricTest {
     assertEquals(Intent.ACTION_SEND, targetIntent?.action)
     assertEquals("text/plain", targetIntent?.type)
     assertEquals(shareSubject, targetIntent?.getStringExtra(Intent.EXTRA_SUBJECT))
-    assertTrue(targetIntent?.getStringExtra(Intent.EXTRA_TEXT)?.contains("Search for QuizPoll Community in the app") == true)
-    assertFalse(targetIntent?.getStringExtra(Intent.EXTRA_TEXT)?.contains("https://") == true)
+    assertTrue(targetIntent?.getStringExtra(Intent.EXTRA_TEXT)?.contains(deepLinkUrl) == true)
   }
 
   @Test
@@ -1075,16 +1078,19 @@ class ExampleRobolectricTest {
 
   @Test
   fun `verify formatted Android Share Intent with deep link for feed cards and interactive polls`() {
+    val postId = "quiz_post_world_history"
     val postTitle = "World History: Ancient Civilizations"
     val postCategory = "History"
     val authorUsername = "history_buff"
+    val deepLinkUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/$postId"
+
     val shareSubject = "Quiz: $postTitle"
     val shareBody = buildString {
       append("🎯 Check out this Quiz on QuizPoll Community!\n\n")
       append("\"$postTitle\"\n")
       append("Topic: $postCategory • By @$authorUsername\n")
       append("\n🧠 10 Questions • Medium Difficulty")
-      append("\n\nSearch for QuizPoll Community in the app to find this content.")
+      append("\n\n🔗 Open link to play, vote, or join the discussion:\n$deepLinkUrl")
     }
 
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1105,8 +1111,7 @@ class ExampleRobolectricTest {
     assertEquals(shareSubject, targetIntent?.getStringExtra(Intent.EXTRA_SUBJECT))
 
     val extractedText = targetIntent?.getStringExtra(Intent.EXTRA_TEXT) ?: ""
-    assertTrue("Should direct users to the app", extractedText.contains("Search for QuizPoll Community in the app"))
-    assertFalse("Should not contain an unverified public URL", extractedText.contains("https://"))
+    assertTrue("Should contain deep link URL", extractedText.contains(deepLinkUrl))
     assertTrue("Should contain topic category", extractedText.contains("Topic: History"))
     assertTrue("Should contain author username", extractedText.contains("@history_buff"))
     assertTrue("Should contain question count", extractedText.contains("10 Questions"))
@@ -1134,17 +1139,17 @@ class ExampleRobolectricTest {
     assertEquals(10, pct2)
     assertEquals(1, userVotedIndices.size)
 
-    // Share copy has no public URL until a real web destination is deployed.
-    var sharedMessage = ""
+    // Verify share callback invocation with direct deep link
+    var sharedUrl: String? = null
     var sharedSubject: String? = null
-    val onShareClick: (String, String) -> Unit = { _, title ->
-      sharedMessage = "Search for QuizPoll Community in the app to find this poll."
+    val onShareClick: (String, String) -> Unit = { id, title ->
+      sharedUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/$id"
       sharedSubject = "Poll: $title"
     }
 
     onShareClick(poll.id, poll.question)
 
-    assertTrue(sharedMessage.contains("Search for QuizPoll Community in the app"))
+    assertEquals("https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/poll_test_42", sharedUrl)
     assertEquals("Poll: Which database do you prefer for mobile apps?", sharedSubject)
   }
 

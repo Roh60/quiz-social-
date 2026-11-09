@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">QuizPoll</string>
+    <string name="default_web_client_id" translatable="false">268383589803-jdbpqei9t3c2tl4e987s3hevc9671fhg.apps.googleusercontent.com</string>
 </resources>

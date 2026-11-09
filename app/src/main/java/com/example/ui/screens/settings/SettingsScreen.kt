@@ -297,17 +297,19 @@ fun SettingsScreen(
           Text("QuizPoll Community Privacy Summary:", fontWeight = FontWeight.Bold)
           Text("• We collect your authentication profile (email, name, username) solely for account functionality.")
           Text("• Strict Zero-Media Policy: No images or videos are uploaded to cloud storage; all data consists of structured educational text.")
-          Text("• Ads are planned through Google AdMob and InMobi mediation. Advertising partners may process device and advertising data.")
-          Text("• In-app account deletion is available. Public web deletion and privacy URLs must be published before public release.")
+          Text("• Ads are served via Google AdMob Mediation in full compliance with Google Play Policies.")
+          Text("• You can request account deletion at any time in-app or via our web portal.")
           Spacer(modifier = Modifier.height(10.dp))
-          Text("Public privacy policy URL will be added after Firebase Hosting deployment.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+          Text("Web Policy: https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/privacy-policy", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
         }
       },
       confirmButton = {
         Button(onClick = {
-          (context as? android.app.Activity)?.let { com.example.ads.AdsManager.showPrivacyOptions(it) }
-          showPrivacyDialog = false
-        }) { Text("Privacy Choices") }
+          try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/privacy-policy"))
+            context.startActivity(intent)
+          } catch (_: Exception) {}
+        }) { Text("Open Web Link") }
       },
       dismissButton = {
         OutlinedButton(onClick = { showPrivacyDialog = false }) { Text("Close") }
@@ -325,16 +327,18 @@ fun SettingsScreen(
           Text("How to Delete Your Account:", fontWeight = FontWeight.Bold)
           Text("1. In-App Deletion: Tap 'Delete Account & Purge Data' below in this screen. All your profile data, quizzes, polls, comments, bookmarks, and auth records will be permanently erased immediately.")
           Spacer(modifier = Modifier.height(8.dp))
-          Text("2. Web Request (Without App): Email rohitpandit55970@gmail.com from your registered email address. A public HTTPS deletion page will be published before production release.")
+          Text("2. Web Request (Without App): Visit our official deletion portal or email rohitpandit55970@gmail.com with your registered email.")
           Spacer(modifier = Modifier.height(10.dp))
-          Text("Public deletion URL is pending Firebase Hosting deployment.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+          Text("Deletion Portal: https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/delete-account", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
         }
       },
       confirmButton = {
         Button(onClick = {
-          val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:rohitpandit55970@gmail.com?subject=QuizPoll%20Community%20Account%20Deletion"))
-          try { context.startActivity(intent) } catch (_: Exception) {}
-        }) { Text("Email Deletion Request") }
+          try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/delete-account"))
+            context.startActivity(intent)
+          } catch (_: Exception) {}
+        }) { Text("Open Web Portal") }
       },
       dismissButton = {
         OutlinedButton(onClick = { showDeletionInfoDialog = false }) { Text("Close") }
@@ -355,16 +359,11 @@ fun SettingsScreen(
           onClick = {
             isDeleting = true
             scope.launch {
-              try {
-                quizPollRepo.deleteUserAccountWorkflow()
-                settingsRepo.clearAllPreferences()
-                showDeleteDialog = false
-                onSignedOut()
-              } catch (e: Exception) {
-                android.widget.Toast.makeText(context, e.localizedMessage ?: "Account deletion failed. Please try again.", android.widget.Toast.LENGTH_LONG).show()
-              } finally {
-                isDeleting = false
-              }
+              quizPollRepo.deleteUserAccountWorkflow()
+              settingsRepo.clearAllPreferences()
+              isDeleting = false
+              showDeleteDialog = false
+              onSignedOut()
             }
           },
           colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),

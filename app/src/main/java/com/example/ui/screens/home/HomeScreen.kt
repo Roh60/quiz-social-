@@ -484,10 +484,11 @@ fun HomeScreen(
           onTakeQuiz = onNavigateToQuizPlayer,
           initialCategory = selectedCategory ?: "All",
           onShareQuiz = { quiz ->
+            val deepLinkUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/quiz/${quiz.id}"
             val sendIntent = Intent(Intent.ACTION_SEND).apply {
               type = "text/plain"
               putExtra(Intent.EXTRA_SUBJECT, "Quiz: ${quiz.title}")
-              putExtra(Intent.EXTRA_TEXT, "Try this quiz on QuizPoll Community: \"${quiz.title}\". Search for QuizPoll Community in the app.")
+              putExtra(Intent.EXTRA_TEXT, "Take this quiz on QuizPoll!\n\n\"${quiz.title}\"\n\n$deepLinkUrl")
             }
             context.startActivity(Intent.createChooser(sendIntent, "Share Quiz with friends"))
           }
@@ -542,10 +543,11 @@ fun HomeScreen(
             }
           },
           onShareClick = { post ->
+            val deepLinkUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/${post.id}"
             val sendIntent = Intent(Intent.ACTION_SEND).apply {
               type = "text/plain"
               putExtra(Intent.EXTRA_SUBJECT, "Discussion: ${post.title}")
-              putExtra(Intent.EXTRA_TEXT, "Join this QuizPoll Community discussion: \"${post.title}\"\n${post.content}\n\nSearch for QuizPoll Community in the app.")
+              putExtra(Intent.EXTRA_TEXT, "Join the discussion on QuizPoll Community!\n\n\"${post.title}\"\n${post.content}\n\n$deepLinkUrl")
             }
             context.startActivity(Intent.createChooser(sendIntent, "Share Discussion with friends"))
           },
@@ -636,6 +638,7 @@ fun HomeScreen(
                   else -> "Community Discussion"
                 }
                 val shareSubject = "$shareType: ${post.title}"
+                val deepLinkUrl = "https://ais-pre-d4k3ad2afjp7ckt63tkur7-693313351988.asia-east1.run.app/post/${post.id}"
                 val shareBody = buildString {
                   append("📢 Check out this $shareType on QuizPoll Community!\n\n")
                   append("📌 \"${post.title}\"\n")
@@ -651,7 +654,7 @@ fun HomeScreen(
                     val p = pollDataMap[post.pollId]!!
                     append("\n📊 ${p.options.size} Choices • ${p.totalVotes} total votes")
                   }
-                  append("\n\nSearch for QuizPoll Community in the app to find this content.")
+                  append("\n\n🔗 Open link to play, vote, or join the discussion:\n$deepLinkUrl")
                 }
 
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {

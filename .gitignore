@@ -30,4 +30,3 @@ functions/service-account*.json
 
 node_modules/
 
-!ci-debug.keystore

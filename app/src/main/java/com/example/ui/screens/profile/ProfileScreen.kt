@@ -82,7 +82,9 @@ import com.example.ui.components.ReferralCard
 import com.example.ui.components.PostCard
 import com.example.ui.components.ProfileSkeletonLoader
 import com.example.ui.components.UserAvatar
-import kotlinx.coroutines.flow.collectLatest
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.viewmodel.ProfileUiState
+import com.example.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,16 +97,19 @@ fun ProfileScreen(
   onNavigateToFollowing: (String) -> Unit,
   onNavigateToPostDetail: (String) -> Unit,
   onNavigateToQuizPlayer: (String) -> Unit,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  viewModel: ProfileViewModel = remember(repository) { ProfileViewModel(repository) }
 ) {
   val scope = rememberCoroutineScope()
-  var profile by remember { mutableStateOf<UserProfile?>(null) }
-  var userQuizzes by remember { mutableStateOf<List<Quiz>>(emptyList()) }
-  var userPolls by remember { mutableStateOf<List<Poll>>(emptyList()) }
-  var userPosts by remember { mutableStateOf<List<Post>>(emptyList()) }
-  var userAttempts by remember { mutableStateOf<List<QuizAttempt>>(emptyList()) }
-  var userBookmarks by remember { mutableStateOf<List<BookmarkItem>>(emptyList()) }
-  var userCompletedPolls by remember { mutableStateOf<List<Poll>>(emptyList()) }
+  val uiState by viewModel.state.collectAsStateWithLifecycle()
+
+  val userQuizzes = uiState.userQuizzes
+  val userPolls = uiState.userPolls
+  val userPosts = uiState.userPosts
+  val userAttempts = uiState.userAttempts
+  val userBookmarks = uiState.userBookmarks
+  val userCompletedPolls = uiState.userCompletedPolls
+
   var selectedTab by remember { mutableIntStateOf(0) }
   val tabTitles = listOf(
     "Quiz History (${userAttempts.size})",
@@ -118,64 +123,10 @@ fun ProfileScreen(
 
   var showEditDialog by remember { mutableStateOf(false) }
 
-  // Observe User Profile from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserProfile(currentUserId).collectLatest {
-      if (it != null) {
-        profile = it
-      } else {
-        profile = try {
-          repository.getOrCreateUserProfile()
-        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-          throw e
-        } catch (e: Exception) {
-          android.util.Log.e("ProfileScreen", "Could not load profile", e)
-          profile ?: UserProfile(userId = currentUserId)
-        }
-      }
-    }
-  }
+  val effectiveUserId = currentUserId.ifBlank { repository.getCurrentUserId() ?: "" }
 
-  // Observe User's Created Quizzes from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserQuizzes(currentUserId).collectLatest {
-      userQuizzes = it
-    }
-  }
-
-  // Observe User's Created Polls from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserPolls(currentUserId).collectLatest {
-      userPolls = it
-    }
-  }
-
-  // Observe User's Completed / Voted Polls from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserVotedPolls(currentUserId).collectLatest {
-      userCompletedPolls = it
-    }
-  }
-
-  // Observe User's Saved Bookmarks from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserBookmarks(currentUserId).collectLatest {
-      userBookmarks = it
-    }
-  }
-
-  // Observe User's Feed Posts from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeFeed(tab = "Latest").collectLatest { all ->
-      userPosts = all.filter { it.userId == currentUserId }
-    }
-  }
-
-  // Observe User's Quiz Attempt History from Firestore
-  LaunchedEffect(currentUserId) {
-    repository.observeUserAttempts(currentUserId).collectLatest {
-      userAttempts = it
-    }
+  LaunchedEffect(effectiveUserId) {
+    viewModel.loadProfile(effectiveUserId)
   }
 
   Scaffold(
@@ -193,22 +144,56 @@ fun ProfileScreen(
       )
     }
   ) { innerPadding ->
-    if (profile == null) {
-      ProfileSkeletonLoader(modifier = Modifier.padding(innerPadding))
-    } else {
-      val p = profile!!
-      val quizCount = maxOf(userQuizzes.size, p.quizCount.toInt())
-      val pollCount = maxOf(userPolls.size, p.pollCount.toInt())
-      val commentCount = maxOf(p.commentCount.toInt(), userPosts.sumOf { it.commentCount.toInt() })
-      val stats = remember(quizCount, pollCount, commentCount) {
-        ActivityPointsCalculator.computeStats(quizCount, pollCount, commentCount)
+    when (val pState = uiState.profileState) {
+      is ProfileUiState.Loading -> {
+        ProfileSkeletonLoader(modifier = Modifier.padding(innerPadding))
       }
+      is ProfileUiState.Unauthenticated -> {
+        Box(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(24.dp),
+          contentAlignment = Alignment.Center
+        ) {
+          EmptyStateView(
+            title = "Sign In Required",
+            message = "Please sign in to view your profile, quiz attempts, badges, and bookmarks.",
+            actionLabel = "Refresh Profile",
+            onActionClick = { viewModel.refresh() }
+          )
+        }
+      }
+      is ProfileUiState.Error -> {
+        Box(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(24.dp),
+          contentAlignment = Alignment.Center
+        ) {
+          EmptyStateView(
+            title = "Unable to Load Profile",
+            message = pState.message,
+            actionLabel = "Retry",
+            onActionClick = { viewModel.refresh() }
+          )
+        }
+      }
+      is ProfileUiState.Success -> {
+        val p = pState.profile
+        val quizCount = maxOf(userQuizzes.size, p.quizCount.toInt())
+        val pollCount = maxOf(userPolls.size, p.pollCount.toInt())
+        val commentCount = maxOf(p.commentCount.toInt(), userPosts.sumOf { it.commentCount.toInt() })
+        val stats = remember(quizCount, pollCount, commentCount) {
+          ActivityPointsCalculator.computeStats(quizCount, pollCount, commentCount)
+        }
 
-      LazyColumn(
-        modifier = modifier
-          .fillMaxSize()
-          .padding(innerPadding)
-      ) {
+        LazyColumn(
+          modifier = modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+        ) {
         // Profile Header
         item {
           Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
@@ -484,22 +469,14 @@ fun ProfileScreen(
             }
             item {
               Spacer(modifier = Modifier.height(12.dp))
-              profile?.let { p ->
-                ReferralCard(
-                  profile = p,
-                  repository = repository,
-                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                  onProfileUpdated = {
-                    scope.launch {
-                      try {
-                        profile = repository.getOrCreateUserProfile()
-                      } catch (e: Exception) {
-                        android.util.Log.e("ProfileScreen", "Profile refresh failed", e)
-                      }
-                    }
-                  }
-                )
-              }
+              ReferralCard(
+                profile = p,
+                repository = repository,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                onProfileUpdated = {
+                  viewModel.refresh()
+                }
+              )
             }
           }
 
@@ -973,15 +950,16 @@ fun ProfileScreen(
       }
     }
   }
+  }
 
   // Edit Profile Dialog
-  if (showEditDialog && profile != null) {
+  val currentSuccess = uiState.profileState as? ProfileUiState.Success
+  if (showEditDialog && currentSuccess != null) {
     EditProfileDialog(
-      profile = profile!!,
+      profile = currentSuccess.profile,
       onDismiss = { showEditDialog = false },
       onSave = { newName, newBio, newLang, newAvatarUrl ->
-        scope.launch {
-          repository.updateUserProfile(newName, newBio, newLang, newAvatarUrl)
+        viewModel.updateProfile(newName, newBio, newLang, newAvatarUrl) {
           showEditDialog = false
         }
       }

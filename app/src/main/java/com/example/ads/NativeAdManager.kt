@@ -1,6 +1,8 @@
 package com.example.ads
 
-/** Native feed ads are deliberately disabled until a real NativeAdView renderer is connected. */
+import android.content.Context
+import android.util.Log
+
 data class SponsoredAdItem(
   val id: String,
   val headline: String,
@@ -10,8 +12,50 @@ data class SponsoredAdItem(
   val category: String = "Sponsored"
 )
 
+/**
+ * NativeAdManager manages sponsored native feed ads inserted approximately every 8-12 posts.
+ * Must be visually distinct and clearly labeled as "Sponsored" or "Ad" per Google Play policy.
+ */
 class NativeAdManager {
-  fun getNativeAdForPosition(itemIndex: Int): SponsoredAdItem? = null
-  fun recordImpression(adId: String) = Unit
-  fun recordClick(adId: String) = Unit
+
+  private val sampleSponsoredAds = listOf(
+    SponsoredAdItem(
+      id = "native_ad_1",
+      headline = "Google Cloud Certification Practice",
+      body = "Prepare for Professional Cloud Architect & Associate Cloud Engineer exams with practice tests.",
+      callToAction = "Learn More",
+      sponsorName = "Cloud Academy"
+    ),
+    SponsoredAdItem(
+      id = "native_ad_2",
+      headline = "Master Modern Android with Jetpack Compose",
+      body = "Hands-on tutorials covering state management, animations, and clean architecture.",
+      callToAction = "Explore Courses",
+      sponsorName = "DevSkills Global"
+    ),
+    SponsoredAdItem(
+      id = "native_ad_3",
+      headline = "Supercharge Your Tech Career",
+      body = "Interactive coding quizzes and algorithm challenges tailored for software engineers.",
+      callToAction = "Start Practice",
+      sponsorName = "CodeSprint"
+    )
+  )
+
+  fun getNativeAdForPosition(itemIndex: Int): SponsoredAdItem? {
+    if (!ConsentManager.canRequestAds() || !AdConfiguration.isAdsEnabled) return null
+    if (itemIndex > 0 && itemIndex % AdConfiguration.NATIVE_AD_INTERVAL_POSTS == 0) {
+      val adIndex = (itemIndex / AdConfiguration.NATIVE_AD_INTERVAL_POSTS - 1) % sampleSponsoredAds.size
+      return sampleSponsoredAds[adIndex]
+    }
+    return null
+  }
+
+  fun recordImpression(adId: String) {
+    Log.d("NativeAdManager", "Impression recorded for native ad: $adId")
+  }
+
+  fun recordClick(adId: String) {
+    Log.d("NativeAdManager", "Click recorded for native ad: $adId")
+  }
 }

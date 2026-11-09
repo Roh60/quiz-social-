@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "268383589803",
+    "project_id": "quizpoll-e600e",
+    "storage_bucket": "quizpoll-e600e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268383589803:android:9655cfca5d8b1823c1aeee",
+        "android_client_info": {
+          "package_name": "com.aistudio.quizpoll.qpxmrk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "268383589803-knoncae3qj4njnc81kg2eg4hhrkfckeu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.quizpoll.qpxmrk",
+            "certificate_hash": "79dec5f1735944a12b77462db5e0137b93029166"
+          }
+        },
+        {
+          "client_id": "268383589803-jdbpqei9t3c2tl4e987s3hevc9671fhg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIVqA8gY8JOh-anoPUNwYBSpCV4Y-2aMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "268383589803-jdbpqei9t3c2tl4e987s3hevc9671fhg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

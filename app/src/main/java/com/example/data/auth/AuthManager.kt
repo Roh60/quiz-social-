@@ -1,5 +1,6 @@
 package com.example.data.auth
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
@@ -7,6 +8,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import com.example.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -18,11 +20,25 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+import android.content.ContextWrapper
+
 object AuthManager {
 
-  private fun getDefaultWebClientId(context: Context): String? {
-    val resourceId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-    return if (resourceId != 0) context.getString(resourceId) else null
+  private const val FALLBACK_WEB_CLIENT_ID = "268383589803-jdbpqei9t3c2tl4e987s3hevc9671fhg.apps.googleusercontent.com"
+
+  private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+  }
+
+  private fun getWebClientId(context: Context): String {
+    val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+    if (resId != 0) {
+      val resVal = context.getString(resId)
+      if (resVal.isNotBlank()) return resVal
+    }
+    return FALLBACK_WEB_CLIENT_ID
   }
 
   fun attemptAutoSignIn(
@@ -36,11 +52,7 @@ object AuthManager {
       onAuthSuccess()
       return
     }
-    val clientId = getDefaultWebClientId(context)
-    if (clientId.isNullOrBlank()) {
-      onUnauthenticated()
-      return
-    }
+    val clientId = getWebClientId(context)
 
     val googleIdOption = GetGoogleIdOption.Builder()
       .setFilterByAuthorizedAccounts(true)
@@ -52,7 +64,12 @@ object AuthManager {
 
     scope.launch {
       try {
-        val result = credentialManager.getCredential(context, request)
+        val activity = context.findActivity()
+        val result = if (activity != null) {
+          credentialManager.getCredential(activity, request)
+        } else {
+          credentialManager.getCredential(context, request)
+        }
         val credential = result.credential
         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
           val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
@@ -76,9 +93,10 @@ object AuthManager {
     scope: CoroutineScope,
     onAuthCancelled: () -> Unit = {}
   ) {
-    val clientId = getDefaultWebClientId(context)
-    if (clientId.isNullOrBlank()) {
-      onAuthError("Google Sign-In configuration missing: default_web_client_id not found. Add the matching QuizPoll google-services.json.")
+    val clientId = getWebClientId(context)
+    val activity = context.findActivity()
+    if (activity == null) {
+      onAuthError("Unable to launch Google Sign-In: Activity context not found")
       return
     }
 
@@ -87,7 +105,7 @@ object AuthManager {
 
     scope.launch {
       try {
-        val result = credentialManager.getCredential(context, request)
+        val result = credentialManager.getCredential(activity, request)
         val credential = result.credential
         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
           val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
