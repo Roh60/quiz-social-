@@ -49,6 +49,12 @@ import com.example.ui.screens.quiz.QuizPlayerScreen
 import com.example.ui.screens.quiz.QuizResultScreen
 import com.example.ui.screens.search.SearchScreen
 import com.example.ui.screens.settings.SettingsScreen
+import com.example.data.remote.WalletRepository
+import com.example.ui.screens.wallet.WalletDashboardScreen
+import com.example.ui.screens.wallet.EarnRewardsScreen
+import com.example.ui.screens.wallet.WithdrawalScreen
+import com.example.ui.screens.wallet.AdminWithdrawalScreen
+import com.example.ui.screens.wallet.ReferralScreen
 
 enum class BottomTab(
   val title: String,
@@ -83,6 +89,11 @@ sealed class SubScreen {
   object Bookmarks : SubScreen()
   object Settings : SubScreen()
   object QuizFeed : SubScreen()
+  object Wallet : SubScreen()
+  object EarnRewards : SubScreen()
+  object Withdrawal : SubScreen()
+  object AdminWithdrawals : SubScreen()
+  object Referral : SubScreen()
 }
 
 @Composable
@@ -92,6 +103,7 @@ fun AppNavigation(
   draftDao: DraftDao?,
   currentUserId: String,
   onSignedOut: () -> Unit,
+  walletRepo: WalletRepository = remember { WalletRepository() },
   modifier: Modifier = Modifier
 ) {
   var currentTab by remember { mutableStateOf(BottomTab.HOME) }
@@ -237,6 +249,48 @@ fun AppNavigation(
             onTakeQuiz = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) }
           )
         }
+        is SubScreen.Wallet -> {
+          WalletDashboardScreen(
+            walletRepository = walletRepo,
+            currentUserId = currentUserId,
+            onNavigateBack = { currentSubScreen = null },
+            onNavigateToEarn = { currentSubScreen = SubScreen.EarnRewards },
+            onNavigateToWithdraw = { currentSubScreen = SubScreen.Withdrawal },
+            onNavigateToAdmin = { currentSubScreen = SubScreen.AdminWithdrawals }
+          )
+        }
+        is SubScreen.EarnRewards -> {
+          EarnRewardsScreen(
+            walletRepository = walletRepo,
+            currentUserId = currentUserId,
+            onNavigateBack = { currentSubScreen = SubScreen.Wallet },
+            onNavigateToQuizzes = { currentSubScreen = SubScreen.QuizFeed },
+            onNavigateToPolls = { currentSubScreen = null; currentTab = BottomTab.HOME },
+            onNavigateToReferral = { currentSubScreen = SubScreen.Referral }
+          )
+        }
+        is SubScreen.Withdrawal -> {
+          WithdrawalScreen(
+            walletRepository = walletRepo,
+            currentUserId = currentUserId,
+            onNavigateBack = { currentSubScreen = SubScreen.Wallet }
+          )
+        }
+        is SubScreen.AdminWithdrawals -> {
+          AdminWithdrawalScreen(
+            walletRepository = walletRepo,
+            currentUserId = currentUserId,
+            onNavigateBack = { currentSubScreen = SubScreen.Wallet }
+          )
+        }
+        is SubScreen.Referral -> {
+          ReferralScreen(
+            walletRepository = walletRepo,
+            quizPollRepository = repository,
+            currentUserId = currentUserId,
+            onNavigateBack = { currentSubScreen = SubScreen.Wallet }
+          )
+        }
       }
     } else {
       when (currentTab) {
@@ -247,7 +301,8 @@ fun AppNavigation(
             onNavigateToSearch = { currentSubScreen = SubScreen.Search() },
             onNavigateToNotifications = { currentTab = BottomTab.NOTIFICATIONS },
             onNavigateToPostDetail = { postId -> currentSubScreen = SubScreen.DiscussionDetail(postId) },
-            onNavigateToQuizPlayer = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) }
+            onNavigateToQuizPlayer = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) },
+            onNavigateToWallet = { currentSubScreen = SubScreen.Wallet }
           )
         }
         BottomTab.EXPLORE -> {
@@ -282,7 +337,8 @@ fun AppNavigation(
             onNavigateToFollowers = { uid -> currentSubScreen = SubScreen.Followers(uid) },
             onNavigateToFollowing = { uid -> currentSubScreen = SubScreen.Following(uid) },
             onNavigateToPostDetail = { postId -> currentSubScreen = SubScreen.DiscussionDetail(postId) },
-            onNavigateToQuizPlayer = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) }
+            onNavigateToQuizPlayer = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) },
+            onNavigateToWallet = { currentSubScreen = SubScreen.Wallet }
           )
         }
       }

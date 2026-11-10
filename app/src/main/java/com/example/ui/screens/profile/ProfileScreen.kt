@@ -18,10 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -97,6 +99,7 @@ fun ProfileScreen(
   onNavigateToFollowing: (String) -> Unit,
   onNavigateToPostDetail: (String) -> Unit,
   onNavigateToQuizPlayer: (String) -> Unit,
+  onNavigateToWallet: () -> Unit = {},
   modifier: Modifier = Modifier,
   viewModel: ProfileViewModel = remember(repository) { ProfileViewModel(repository) }
 ) {
@@ -312,6 +315,34 @@ fun ProfileScreen(
                 Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Account Settings", style = MaterialTheme.typography.labelLarge)
+              }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Wallet & Coin Earnings Portal Card
+            Card(
+              shape = RoundedCornerShape(14.dp),
+              colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+              modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToWallet() }
+                .testTag("profile_wallet_card")
+            ) {
+              Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                  Spacer(modifier = Modifier.width(10.dp))
+                  Column {
+                    Text("My Coin Wallet & Earnings", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text("1000 Coins = ₹5.00 • Request UPI Payout", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                  }
+                }
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
               }
             }
 

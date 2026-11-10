@@ -445,7 +445,15 @@ fun CreateQuizScreen(
               onQuizPublished(quizId)
             } catch (e: Exception) {
               isPublishing = false
-              validationError = e.localizedMessage ?: "Failed to publish quiz. Please try again."
+              val msg = when {
+                e.message?.contains("permission", ignoreCase = true) == true ->
+                  "Unable to publish quiz: Please ensure your account is signed in and try again."
+                e.message?.contains("network", ignoreCase = true) == true ||
+                e.message?.contains("unavailable", ignoreCase = true) == true ->
+                  "Network error: Unable to connect to server. Please check your internet connection."
+                else -> e.localizedMessage ?: "Failed to publish quiz. Please try again."
+              }
+              validationError = msg
             }
           }
         },

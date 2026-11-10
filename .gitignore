@@ -19,14 +19,10 @@ debug.keystore
 *-debug.log
 
 
-# Firebase / backend secrets
-.firebase/
-functions/node_modules/
-functions/.env
-functions/service-account*.json
-**/*service-account*.json
+# Secrets / signing (never commit)
 *.jks
 *.keystore
-
+**/*service-account*.json
+functions/.env
+functions/node_modules/
 node_modules/
-

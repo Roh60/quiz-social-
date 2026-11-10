@@ -73,8 +73,8 @@ class QuizPollRepository(
     quizLeaderboardDao: QuizLeaderboardDao? = null
   ) : this(
     try {
-      val customDbId = context.applicationContext.getString(R.string.firestore_database_id)
-      if (customDbId.isNotBlank()) {
+      val customDbId = context.applicationContext.getString(R.string.firestore_database_id).trim()
+      if (customDbId.isNotBlank() && customDbId != "(default)" && !customDbId.contains("ai-studio-android-quizpoll-")) {
         FirebaseFirestore.getInstance(customDbId)
       } else {
         FirebaseFirestore.getInstance()
@@ -216,6 +216,17 @@ class QuizPollRepository(
       commentCount = 0L
     )
     postRef.set(post).await()
+
+    // Server-authoritative community post reward (+5 coins)
+    runCatching {
+      WalletRepository(db).claimPostReward(
+        userId = uid,
+        postId = postRef.id,
+        postTitle = title,
+        content = content
+      )
+    }
+
     return postRef.id
   }
 
@@ -230,12 +241,21 @@ class QuizPollRepository(
     questions: List<QuizQuestion>
   ): String {
     val uid = requireUserId()
-    val profile = getOrCreateUserProfile()
+    val profile = try {
+      getOrCreateUserProfile()
+    } catch (e: Exception) {
+      Log.w("QuizPollRepository", "Failed to retrieve user profile, using fallback for quiz author: ${e.message}")
+      UserProfile(
+        userId = uid,
+        displayName = auth.currentUser?.displayName?.ifBlank { "Quiz Master" } ?: "Quiz Master",
+        username = auth.currentUser?.email?.substringBefore("@")?.lowercase()?.replace(Regex("[^a-z0-9_]"), "_") ?: "user_${uid.take(5)}"
+      )
+    }
     val quizRef = db.collection("quizzes").document()
     val quiz = Quiz(
       userId = uid,
-      authorName = profile.displayName,
-      authorUsername = profile.username,
+      authorName = profile.displayName.ifBlank { "Quiz Master" },
+      authorUsername = profile.username.ifBlank { "user_${uid.take(5)}" },
       title = title,
       description = description,
       category = category,
@@ -257,22 +277,30 @@ class QuizPollRepository(
 
     // Create companion post for feed if public
     if (isPublic) {
-      val postRef = db.collection("posts").document()
-      val post = Post(
-        userId = uid,
-        authorName = profile.displayName,
-        authorUsername = profile.username,
-        postType = "quiz",
-        title = title,
-        content = description.ifBlank { "Test your knowledge on $title ($category - $difficulty)!" },
-        category = category,
-        quizId = quizRef.id
-      )
-      postRef.set(post).await()
+      try {
+        val postRef = db.collection("posts").document()
+        val post = Post(
+          userId = uid,
+          authorName = profile.displayName.ifBlank { "Quiz Master" },
+          authorUsername = profile.username.ifBlank { "user_${uid.take(5)}" },
+          postType = "quiz",
+          title = title,
+          content = description.ifBlank { "Test your knowledge on $title ($category - $difficulty)!" },
+          category = category,
+          quizId = quizRef.id
+        )
+        postRef.set(post).await()
+      } catch (e: Exception) {
+        Log.w("QuizPollRepository", "Companion post creation skipped: ${e.message}")
+      }
     }
 
-    // Update user quiz count
-    db.collection("users").document(uid).update("quizCount", FieldValue.increment(1)).await()
+    // Safely update user quiz count
+    try {
+      db.collection("users").document(uid).update("quizCount", FieldValue.increment(1)).await()
+    } catch (e: Exception) {
+      Log.w("QuizPollRepository", "Could not increment user quizCount: ${e.message}")
+    }
     return quizRef.id
   }
 
@@ -402,7 +430,11 @@ class QuizPollRepository(
       postRef.set(post).await()
     }
 
-    db.collection("users").document(uid).update("pollCount", FieldValue.increment(1)).await()
+    try {
+      db.collection("users").document(uid).update("pollCount", FieldValue.increment(1)).await()
+    } catch (e: Exception) {
+      Log.w("QuizPollRepository", "Could not increment user pollCount: ${e.message}")
+    }
     return pollRef.id
   }
 
@@ -1080,6 +1112,25 @@ class QuizPollRepository(
       timeTakenSeconds = timeTakenSeconds
     )
     attemptRef.set(attempt).await()
+
+    // Credit daily challenge (+5 coins per quiz, max 25/day) and quiz pass (+50 coins)
+    runCatching {
+      val walletRepo = WalletRepository(db)
+      walletRepo.recordQuizCompletionDailyChallenge(uid, quizId)
+    }
+
+    // +2 coins for every correct answer. Each question pays once per user, never on your own quiz.
+    runCatching {
+      val quizRef = db.collection("quizzes").document(quizId)
+      val quizOwner = quizRef.get().await().getString("userId")
+      if (score > 0 && quizOwner != uid) {
+        val walletRepo = WalletRepository(db)
+        val questionIds = quizRef.collection("questions").get().await().documents.map { it.id }
+        questionIds.take(score).forEach { questionId ->
+          walletRepo.claimCorrectAnswerReward(uid, questionId, quizId)
+        }
+      }
+    }
 
     val userName = auth.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "Quiz Scholar"
     val userHandle = auth.currentUser?.email?.substringBefore("@")?.takeIf { it.isNotBlank() } ?: "scholar"

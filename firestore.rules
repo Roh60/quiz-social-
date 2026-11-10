@@ -10,11 +10,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email_verified == true &&
+          request.auth.token.email in ['rohitpandit55970@gmail.com']) ||
+        request.auth.token.admin == true
+      );
+    }
+
     // Users
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId) || (
-        isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'quizCount', 'pollCount', 'followersCount', 'followingCount', 'referralCount', 'referralPointsEarned'])
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || (
+        isAuthenticated() && resource != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'quizCount', 'pollCount', 'followersCount', 'followingCount', 'referralCount', 'referralPointsEarned'])
       );
       allow delete: if isOwner(userId);
 
@@ -61,7 +70,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'commentCount', 'updatedAt'])
+        (resource != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'commentCount', 'updatedAt']))
       );
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
@@ -77,7 +86,7 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
         allow update: if isAuthenticated() && (
           resource.data.userId == request.auth.uid ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'replyCount'])
+          (resource != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'replyCount']))
         );
         allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
@@ -101,7 +110,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attemptCount', 'averageScore', 'updatedAt'])
+        (resource != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attemptCount', 'averageScore', 'updatedAt']))
       );
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
@@ -139,7 +148,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['optionVotes', 'totalVotes'])
+        (resource != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['optionVotes', 'totalVotes']))
       );
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
@@ -176,6 +185,87 @@ service cloud.firestore {
     // Blocks
     match /blocks/{userId}/users/{blockedUid} {
       allow read, write: if isOwner(userId);
+    }
+
+    // Wallets (Coin & Cash conversion ledger)
+    match /wallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      // Users cannot forge payout status fields (only an admin can change them).
+      allow create: if isAdmin() || (isOwner(userId)
+        && request.resource.data.get('paidWithdrawalPaisa', 0) == 0
+        && request.resource.data.get('approvedWithdrawalPaisa', 0) == 0
+        && request.resource.data.get('rejectedWithdrawalPaisa', 0) == 0);
+      allow update: if isAdmin() || (isOwner(userId)
+        && request.resource.data.get('paidWithdrawalPaisa', 0) == resource.data.get('paidWithdrawalPaisa', 0)
+        && request.resource.data.get('approvedWithdrawalPaisa', 0) == resource.data.get('approvedWithdrawalPaisa', 0)
+        && request.resource.data.get('rejectedWithdrawalPaisa', 0) == resource.data.get('rejectedWithdrawalPaisa', 0));
+      allow delete: if isAdmin();
+    }
+
+    // Coin Transactions (Immutable ledger records)
+    match /coinTransactions/{transactionId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Withdrawal Requests (UPI payout requests)
+    match /withdrawalRequests/{requestId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'PENDING';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Earning & Monetization Global Configuration
+    match /earningConfig/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // App Configuration
+    match /appConfig/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Rewarded Ad Claims
+    match /rewardedAdClaims/{claimId} {
+      allow read, create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Daily Check-in records
+    match /dailyCheckins/{checkinId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (checkinId.matches('^' + request.auth.uid + '_.*') || request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Daily Challenge records
+    match /dailyChallenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (challengeId.matches('^' + request.auth.uid + '_.*') || request.resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Question Answer Rewards
+    match /answerRewards/{rewardId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (rewardId.matches('^' + request.auth.uid + '_.*') || request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Post Rewards
+    match /postRewards/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Admin Audit Logs
+    match /adminAuditLogs/{logId} {
+      allow read, write: if isAdmin();
     }
   }
 }

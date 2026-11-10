@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
+import com.example.data.ads.UnifiedAdsManager
 import com.example.data.auth.AuthManager
 import com.example.data.local.AppSettings
 import com.example.data.local.AppSettingsRepository
@@ -99,8 +100,10 @@ fun AppRoot(settingsRepo: AppSettingsRepository) {
     }
   }
 
-  // Attempt silent auto-sign-in on startup if not already signed in
+  // Initialize monetization ad networks & attempt silent auto-sign-in on startup
   LaunchedEffect(Unit) {
+    UnifiedAdsManager.initializeAll(context.applicationContext)
+    com.example.data.ads.AppOpenAdManager.loadAd(context.applicationContext)
     if (currentUser == null) {
       AuthManager.attemptAutoSignIn(
         context = context,

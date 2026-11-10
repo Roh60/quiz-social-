@@ -46,6 +46,17 @@ jobs:
             keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
+      - name: Check signing SHA-1 against Firebase
+        run: |
+          SHA1=$(keytool -list -v -keystore debug.keystore -storepass android -alias androiddebugkey | grep 'SHA1:' | head -1 | awk '{print $2}')
+          EXPECTED="D6:F9:BB:9A:C3:3C:CA:74:7E:06:BA:DB:E4:0C:8F:A7:D5:98:D9:64"
+          echo "APK signing SHA-1: $SHA1"
+          if [ "$SHA1" = "$EXPECTED" ]; then
+            echo "::notice title=Signing SHA-1 OK::$SHA1 matches the fingerprint registered in Firebase"
+          else
+            echo "::warning title=Signing SHA-1 does NOT match Firebase::This APK is signed with $SHA1 but Firebase has $EXPECTED. Google sign-in will fail until this SHA-1 is added in Firebase."
+          fi
+
       - name: Build Debug APK
         run: bash ./gradlew assembleDebug --no-daemon
 

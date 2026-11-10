@@ -31,11 +31,6 @@ object AdConfiguration {
     val supportsBidding: Boolean
   ) {
     GOOGLE_ADMOB("Google AdMob", "com.google.ads.mediation.admob.AdMobAdapter", true),
-    APPLOVIN("AppLovin MAX", "com.google.ads.mediation.applovin.AppLovinMediationAdapter", true),
-    UNITY_ADS("Unity Ads", "com.google.ads.mediation.unity.UnityMediationAdapter", true),
-    INMOBI("InMobi", "com.google.ads.mediation.inmobi.InMobiMediationAdapter", true),
-    META_AUDIENCE_NETWORK("Meta Audience Network", "com.google.ads.mediation.facebook.FacebookMediationAdapter", true),
-    MINTEGRAL("Mintegral", "com.google.ads.mediation.mintegral.MintegralMediationAdapter", true),
-    PANGLE("Pangle", "com.google.ads.mediation.pangle.PangleMediationAdapter", true)
+    INMOBI("InMobi", "com.google.ads.mediation.inmobi.InMobiMediationAdapter", true)
   }
 }

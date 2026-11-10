@@ -401,9 +401,11 @@ fun AuthScreen(
                   isLoading = true
                   AuthManager.sendPasswordReset(
                     email = email,
-                    onSuccess = {
+                    onSuccess = { msg ->
                       isLoading = false
-                      successMessage = "Reset link sent! Please check your email inbox."
+                      successMessage = msg
+                      // Automatically return to Login so user can log in after resetting password
+                      authMode = AuthMode.LOGIN
                     },
                     onError = { err ->
                       isLoading = false
@@ -437,6 +439,23 @@ fun AuthScreen(
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
+              )
+            }
+          }
+
+          if (authMode == AuthMode.FORGOT_PASSWORD) {
+            TextButton(
+              onClick = {
+                authMode = AuthMode.LOGIN
+                errorMessage = null
+              },
+              modifier = Modifier.fillMaxWidth().testTag("auth_forgot_back_to_login_btn")
+            ) {
+              Text(
+                text = "Remember your password? Sign In",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
               )
             }
           }

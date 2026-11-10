@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -85,6 +86,7 @@ fun HomeScreen(
   onNavigateToNotifications: () -> Unit,
   onNavigateToPostDetail: (String) -> Unit,
   onNavigateToQuizPlayer: (String) -> Unit,
+  onNavigateToWallet: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -250,6 +252,9 @@ fun HomeScreen(
           modifier = Modifier.testTag("home_create_poll_action")
         ) {
           Icon(Icons.Default.Poll, contentDescription = "Create Poll", tint = MaterialTheme.colorScheme.primary)
+        }
+        IconButton(onClick = onNavigateToWallet, modifier = Modifier.testTag("nav_wallet_btn")) {
+          Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Wallet & Coins", tint = MaterialTheme.colorScheme.primary)
         }
         IconButton(onClick = onNavigateToSearch, modifier = Modifier.testTag("nav_search_btn")) {
           Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurface)
