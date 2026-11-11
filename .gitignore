@@ -26,3 +26,6 @@ debug.keystore
 functions/.env
 functions/node_modules/
 node_modules/
+
+# Debug-only keystore used by CI (never use it for release builds)
+!ci-debug.keystore

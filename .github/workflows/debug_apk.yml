@@ -34,17 +34,10 @@ jobs:
         continue-on-error: true
         run: bash ./gradlew testDebugUnitTest --no-daemon
 
-      - name: Restore stable debug keystore
-        env:
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+      - name: Use committed debug keystore
         run: |
-          if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
-            printf '%s' "$DEBUG_KEYSTORE_BASE64" | base64 --decode > debug.keystore
-            keytool -list -v -keystore debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA1|SHA256"
-          else
-            echo "Stable keystore secret unavailable; creating temporary keystore for this build."
-            keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
+          cp ci-debug.keystore debug.keystore
+          keytool -list -v -keystore debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA1|SHA256"
 
       - name: Check signing SHA-1 against Firebase
         run: |
