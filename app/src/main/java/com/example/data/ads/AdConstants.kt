@@ -11,7 +11,7 @@ package com.example.data.ads
 object AdConstants {
 
   // AdMob Application ID: Configured in AndroidManifest.xml
-  const val ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+  const val ADMOB_APP_ID = "ca-app-pub-5674862555631304~5080207259"
 
   // Official Google Sample/Test Ad Unit IDs (Use these for development & testing)
   const val ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
