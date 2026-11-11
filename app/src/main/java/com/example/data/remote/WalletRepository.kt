@@ -40,8 +40,7 @@ class WalletRepository(
   private val todayDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
   private val ADMIN_EMAILS = setOf(
-    "rohitpandit55970@gmail.com",
-    "admin@quizpoll.app"
+    "rohitpandit55970@gmail.com"
   )
 
   fun requireUserId(): String {
@@ -50,8 +49,10 @@ class WalletRepository(
   }
 
   fun isCurrentUserAdmin(): Boolean {
-    val email = auth.currentUser?.email?.lowercase()?.trim() ?: ""
-    return ADMIN_EMAILS.contains(email)
+    val user = auth.currentUser ?: return false
+    val email = user.email?.lowercase()?.trim() ?: ""
+    // Must match firestore.rules: admin needs a verified email address.
+    return user.isEmailVerified && ADMIN_EMAILS.contains(email)
   }
 
   // ---------------- WALLET OBSERVATION ----------------

@@ -49,7 +49,7 @@ jobs:
       - name: Check signing SHA-1 against Firebase
         run: |
           SHA1=$(keytool -list -v -keystore debug.keystore -storepass android -alias androiddebugkey | grep 'SHA1:' | head -1 | awk '{print $2}')
-          EXPECTED="D6:F9:BB:9A:C3:3C:CA:74:7E:06:BA:DB:E4:0C:8F:A7:D5:98:D9:64"
+          EXPECTED="E8:75:D0:DA:BB:9C:7E:98:CD:87:0E:F8:15:94:C5:E0:1E:10:C5:BB"
           echo "APK signing SHA-1: $SHA1"
           if [ "$SHA1" = "$EXPECTED" ]; then
             echo "::notice title=Signing SHA-1 OK::$SHA1 matches the fingerprint registered in Firebase"

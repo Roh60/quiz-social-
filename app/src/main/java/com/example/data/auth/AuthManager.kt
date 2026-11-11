@@ -102,16 +102,12 @@ object AuthManager {
       return
     }
 
+    // The "Continue with Google" button must use GetSignInWithGoogleOption on its own.
+    // Mixing it with GetGoogleIdOption in one request can fail with "no credentials".
     val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-    val googleIdOption = GetGoogleIdOption.Builder()
-      .setFilterByAuthorizedAccounts(false)
-      .setServerClientId(clientId)
-      .setAutoSelectEnabled(false)
-      .build()
 
     val request = GetCredentialRequest.Builder()
       .addCredentialOption(signInOption)
-      .addCredentialOption(googleIdOption)
       .build()
 
     scope.launch {
@@ -138,7 +134,7 @@ object AuthManager {
         onAuthCancelled()
       } catch (e: NoCredentialException) {
         Log.w("Auth", "No Google account found on device", e)
-        onAuthError("No Google account found on this device. Please sign in with email/password or add a Google account to your device settings.")
+        onAuthError("Google sign-in is not available right now (${e.message ?: "no credentials"}). Please use email and password.")
       } catch (e: Exception) {
         Log.e("Auth", "Google Sign-In failed", e)
         val msg = when {

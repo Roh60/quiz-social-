@@ -1,5 +1,7 @@
 package com.example.data.ads
 
+import com.example.BuildConfig
+
 /**
  * Centralized ad unit identifiers, placement IDs, and policy configurations for QuizPoll Community.
  *
@@ -20,11 +22,23 @@ object AdConstants {
   const val ADMOB_TEST_NATIVE_ID = "ca-app-pub-3940256099942544/2247690410"
   const val ADMOB_TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257390722"
 
-  // Production AdMob Placeholders (Set real IDs in production build / secrets)
-  const val ADMOB_PROD_BANNER_ID = ADMOB_TEST_BANNER_ID
-  const val ADMOB_PROD_INTERSTITIAL_ID = ADMOB_TEST_INTERSTITIAL_ID
-  const val ADMOB_PROD_REWARDED_ID = ADMOB_TEST_REWARDED_ID
-  const val ADMOB_PROD_NATIVE_ID = ADMOB_TEST_NATIVE_ID
+  // Real AdMob ad units (publisher pub-5674862555631304).
+  // Debug builds (the APKs you test with) ALWAYS show Google test ads, so you never click your own
+  // live ads (that can get the AdMob account banned). Release builds use the real IDs below.
+  private const val REAL_BANNER_ID = "ca-app-pub-5674862555631304/1140962241"
+  private const val REAL_INTERSTITIAL_ID = "ca-app-pub-5674862555631304/6201717237"
+  private const val REAL_REWARDED_ID = "ca-app-pub-5674862555631304/9428460462"
+  private const val REAL_NATIVE_ID = "ca-app-pub-5674862555631304/1213114439"
+
+  val ADMOB_PROD_BANNER_ID: String
+    get() = if (BuildConfig.DEBUG) ADMOB_TEST_BANNER_ID else REAL_BANNER_ID
+  val ADMOB_PROD_INTERSTITIAL_ID: String
+    get() = if (BuildConfig.DEBUG) ADMOB_TEST_INTERSTITIAL_ID else REAL_INTERSTITIAL_ID
+  val ADMOB_PROD_REWARDED_ID: String
+    get() = if (BuildConfig.DEBUG) ADMOB_TEST_REWARDED_ID else REAL_REWARDED_ID
+  val ADMOB_PROD_NATIVE_ID: String
+    get() = if (BuildConfig.DEBUG) ADMOB_TEST_NATIVE_ID else REAL_NATIVE_ID
+  // App open ad unit not created yet: keeps using the test unit.
   const val ADMOB_PROD_APP_OPEN_ID = ADMOB_TEST_APP_OPEN_ID
 
   // InMobi Placement & Account Identifiers

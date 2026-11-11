@@ -15,15 +15,16 @@ data class EarningConfig(
   val configId: String = "global",
   val coinsPerRupee: Long = 200L, // 1000 coins = ₹5 INR
   val minWithdrawalCoins: Long = 2000L, // Minimum threshold: 2000 coins = ₹10 INR
-  val maxWithdrawalCoinsPerDay: Long = 50000L, // Max per day: 50,000 coins = ₹250 INR
+  val maxWithdrawalCoinsPerDay: Long = 10000L, // Max per day: 10,000 coins = ₹50 INR
   val isAdMobEnabled: Boolean = true,
   val isInMobiEnabled: Boolean = true,
   val isAdMobRewardedAllowed: Boolean = true,
   // Strict compliance: False unless verified publisher agreement permits real money conversion
   val isInMobiCashConversionAllowed: Boolean = false,
-  // Withdrawals stay paused until the wallet is hardened. Admin can open them from the admin screen.
-  val isWithdrawalPaused: Boolean = true,
-  val pauseReason: String = "Withdrawals will open soon.",
+  // Withdrawals are open. Every request is reviewed and paid manually by the admin.
+  // To stop new requests, the admin can set isWithdrawalPaused = true in earningConfig/global.
+  val isWithdrawalPaused: Boolean = false,
+  val pauseReason: String = "",
   // Reward amounts for community activities
   val quizWinCoins: Long = 0L, // not part of the agreed economy
   val pollVoteCoins: Long = 10L,
