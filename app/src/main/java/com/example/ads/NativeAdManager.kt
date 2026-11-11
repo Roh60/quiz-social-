@@ -43,11 +43,8 @@ class NativeAdManager {
   )
 
   fun getNativeAdForPosition(itemIndex: Int): SponsoredAdItem? {
-    if (!ConsentManager.canRequestAds() || !AdConfiguration.isAdsEnabled) return null
-    if (itemIndex > 0 && itemIndex % AdConfiguration.NATIVE_AD_INTERVAL_POSTS == 0) {
-      val adIndex = (itemIndex / AdConfiguration.NATIVE_AD_INTERVAL_POSTS - 1) % sampleSponsoredAds.size
-      return sampleSponsoredAds[adIndex]
-    }
+    // The built-in "sponsored" cards were fake placeholders, which looks like a fake ad and is not
+    // allowed. No sponsored card is shown until a real AdMob native ad is wired in.
     return null
   }
 
