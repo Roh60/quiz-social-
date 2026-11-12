@@ -217,15 +217,7 @@ class QuizPollRepository(
     )
     postRef.set(post).await()
 
-    // Server-authoritative community post reward (+5 coins)
-    runCatching {
-      WalletRepository(db).claimPostReward(
-        userId = uid,
-        postId = postRef.id,
-        postTitle = title,
-        content = content
-      )
-    }
+    // Post coins are given by RewardCoordinator (called from the screen) so the user sees the result.
 
     return postRef.id
   }
@@ -1113,24 +1105,7 @@ class QuizPollRepository(
     )
     attemptRef.set(attempt).await()
 
-    // Credit daily challenge (+5 coins per quiz, max 25/day) and quiz pass (+50 coins)
-    runCatching {
-      val walletRepo = WalletRepository(db)
-      walletRepo.recordQuizCompletionDailyChallenge(uid, quizId)
-    }
-
-    // +2 coins for every correct answer. Each question pays once per user, never on your own quiz.
-    runCatching {
-      val quizRef = db.collection("quizzes").document(quizId)
-      val quizOwner = quizRef.get().await().getString("userId")
-      if (score > 0 && quizOwner != uid) {
-        val walletRepo = WalletRepository(db)
-        val questionIds = quizRef.collection("questions").get().await().documents.map { it.id }
-        questionIds.take(score).forEach { questionId ->
-          walletRepo.claimCorrectAnswerReward(uid, questionId, quizId)
-        }
-      }
-    }
+    // Quiz coins (daily challenge + correct answers) are given by RewardCoordinator from the screen.
 
     val userName = auth.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "Quiz Scholar"
     val userHandle = auth.currentUser?.email?.substringBefore("@")?.takeIf { it.isNotBlank() } ?: "scholar"

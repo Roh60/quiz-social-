@@ -1,5 +1,6 @@
 package com.example.ui.navigation
 
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -109,9 +110,33 @@ fun AppNavigation(
   var currentTab by remember { mutableStateOf(BottomTab.HOME) }
   var currentSubScreen by remember { mutableStateOf<SubScreen?>(null) }
 
+  val rewardContext = androidx.compose.ui.platform.LocalContext.current
+  val rewardScope = androidx.compose.runtime.rememberCoroutineScope()
+  val rewards = remember {
+    com.example.data.remote.RewardCoordinator(
+      com.google.firebase.firestore.FirebaseFirestore.getInstance(
+        rewardContext.applicationContext.getString(com.example.R.string.firestore_database_id)
+      )
+    )
+  }
+  val giveReward: (suspend () -> String?) -> Unit = { block ->
+    rewardScope.launch {
+      val message = try {
+        block()
+      } catch (e: Exception) {
+        "Could not add coins: ${e.message}"
+      }
+      if (message != null) {
+        android.widget.Toast.makeText(rewardContext, message, android.widget.Toast.LENGTH_LONG).show()
+      }
+    }
+  }
+
   Scaffold(
     bottomBar = {
       if (currentSubScreen == null) {
+        androidx.compose.foundation.layout.Column {
+        com.example.ui.components.BannerAdView()
         NavigationBar {
           BottomTab.entries.forEach { tab ->
             val isSelected = currentTab == tab
@@ -128,6 +153,7 @@ fun AppNavigation(
               modifier = Modifier.testTag(tab.testTag)
             )
           }
+        }
         }
       }
     }
@@ -156,7 +182,10 @@ fun AppNavigation(
             repository = repository,
             draftDao = draftDao,
             onNavigateBack = { currentSubScreen = null },
-            onQuizPublished = { quizId -> currentSubScreen = SubScreen.QuizPlayer(quizId) }
+            onQuizPublished = { quizId ->
+              giveReward { rewards.rewardCreatedContent(quizId, "quiz") }
+              currentSubScreen = SubScreen.QuizPlayer(quizId)
+            }
           )
         }
         is SubScreen.CreatePoll -> {
@@ -164,14 +193,21 @@ fun AppNavigation(
             repository = repository,
             draftDao = draftDao,
             onNavigateBack = { currentSubScreen = null },
-            onPollPublished = { currentSubScreen = null; currentTab = BottomTab.HOME }
+            onPollPublished = { pollId ->
+              giveReward { rewards.rewardCreatedContent(pollId, "poll") }
+              currentSubScreen = null
+              currentTab = BottomTab.HOME
+            }
           )
         }
         is SubScreen.CreateDiscussion -> {
           CreateDiscussionScreen(
             repository = repository,
             onNavigateBack = { currentSubScreen = null },
-            onDiscussionPublished = { postId -> currentSubScreen = SubScreen.DiscussionDetail(postId) }
+            onDiscussionPublished = { postId ->
+              giveReward { rewards.rewardDiscussion(postId) }
+              currentSubScreen = SubScreen.DiscussionDetail(postId)
+            }
           )
         }
         is SubScreen.Drafts -> {
@@ -188,6 +224,7 @@ fun AppNavigation(
             repository = repository,
             onNavigateBack = { currentSubScreen = null },
             onQuizCompleted = { score, total, timeTaken, answers ->
+              giveReward { rewards.rewardQuiz(sub.quizId, score) }
               currentSubScreen = SubScreen.QuizResult(sub.quizId, score, total, timeTaken, answers)
             }
           )

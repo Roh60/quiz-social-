@@ -38,8 +38,9 @@ object AdConstants {
     get() = if (BuildConfig.DEBUG) ADMOB_TEST_REWARDED_ID else REAL_REWARDED_ID
   val ADMOB_PROD_NATIVE_ID: String
     get() = if (BuildConfig.DEBUG) ADMOB_TEST_NATIVE_ID else REAL_NATIVE_ID
-  // App open ad unit not created yet: keeps using the test unit.
-  const val ADMOB_PROD_APP_OPEN_ID = ADMOB_TEST_APP_OPEN_ID
+  private const val REAL_APP_OPEN_ID = "ca-app-pub-5674862555631304/5383373868"
+  val ADMOB_PROD_APP_OPEN_ID: String
+    get() = if (BuildConfig.DEBUG) ADMOB_TEST_APP_OPEN_ID else REAL_APP_OPEN_ID
 
   // InMobi Placement & Account Identifiers
   const val INMOBI_TEST_ACCOUNT_ID = "1471550843414"

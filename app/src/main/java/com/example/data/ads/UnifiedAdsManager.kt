@@ -99,6 +99,9 @@ fun AdMobBanner(
 ) {
   if (!AdMobManager.isEnabled()) return
 
+  // Debug builds show the reason when an ad cannot load (release builds stay silent).
+  val failure = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+
   Box(
     modifier = modifier
       .fillMaxWidth()
@@ -112,9 +115,21 @@ fun AdMobBanner(
         AdView(context).apply {
           setAdSize(AdSize.BANNER)
           this.adUnitId = adUnitId
+          adListener = object : com.google.android.gms.ads.AdListener() {
+            override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
+              if (com.example.BuildConfig.DEBUG) failure.value = "Ad error ${error.code}: ${error.message}"
+            }
+
+            override fun onAdLoaded() {
+              failure.value = null
+            }
+          }
           loadAd(AdRequest.Builder().build())
         }
       }
     )
+    failure.value?.let { message ->
+      Text(text = message, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+    }
   }
 }

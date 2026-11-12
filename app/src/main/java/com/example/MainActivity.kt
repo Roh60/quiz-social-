@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+    com.example.data.ads.AppOpenForegroundTrigger.register(application)
     QuizPollMessagingService.ensureNotificationChannel(this)
     com.example.ads.AdsManager.initialize(applicationContext)
     com.example.ads.AdsManager.preloadAds(this)

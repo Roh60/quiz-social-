@@ -46,7 +46,7 @@ object AppOpenAdManager {
   /**
    * Preloads an App Open Ad into memory.
    */
-  fun loadAd(context: Context, adUnitId: String = AdConstants.ADMOB_TEST_APP_OPEN_ID) {
+  fun loadAd(context: Context, adUnitId: String = AdConstants.ADMOB_PROD_APP_OPEN_ID) {
     if (!isAppOpenEnabled || isLoadingAd || isAdAvailable()) {
       return
     }
